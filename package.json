@@ -2,7 +2,6 @@
   "name": "ritsu-web",
   "version": "1.0.0",
   "description": "A rhythm game stats tracker on web.",
-
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "parcel index.html"
@@ -19,6 +18,10 @@
   },
   "homepage": "https://github.com/kentpz727/ritsu-web#readme",
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.3.1",
+    "@mui/material": "^9.3.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

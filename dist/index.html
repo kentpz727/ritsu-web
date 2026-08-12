@@ -5,8 +5,26 @@
     <link rel="stylesheet" href="/ritsu-web.3a01df49.css">
 </head>
 <body>
+    <nav aria-label="Debug pages">
+        <strong>Debug pages:</strong>
+        <ul id="debug-page-links"></ul>
+    </nav>
     <div id="root"></div>
     <script type="module" src="/ritsu-web.2002cba6.js"></script>
+    <script data-parcel-key="asset-0">
+        import { debugPages } from "./debug/debug-pages.js";
+
+        const debugPageLinks = document.getElementById("debug-page-links");
+
+        for (const page of debugPages) {
+            const item = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = page.path;
+            link.textContent = page.label;
+            item.appendChild(link);
+            debugPageLinks.appendChild(item);
+        }
+    </script>
 
 
 </body></html>

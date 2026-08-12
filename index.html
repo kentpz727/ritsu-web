@@ -7,7 +7,25 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <nav aria-label="Debug pages">
+        <strong>Debug pages:</strong>
+        <ul id="debug-page-links"></ul>
+    </nav>
     <div id="root"></div>
     <script type="module" src="index.jsx"></script>
+    <script type="module">
+        import { debugPages } from "./debug-pages.js";
+
+        const debugPageLinks = document.getElementById("debug-page-links");
+
+        for (const page of debugPages) {
+            const item = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = page.path;
+            link.textContent = page.label;
+            item.appendChild(link);
+            debugPageLinks.appendChild(item);
+        }
+    </script>
 </body>
 </html>

@@ -1,0 +1,27 @@
+{
+  "name": "ritsu-web",
+  "version": "1.0.0",
+  "description": "A rhythm game stats tracker on web.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kentpz727/ritsu-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kentpz727/ritsu-web/issues"
+  },
+  "homepage": "https://github.com/kentpz727/ritsu-web#readme",
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "parcel": "^2.16.4"
+  }
+}

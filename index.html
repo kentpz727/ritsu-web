@@ -8,6 +8,13 @@
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="index.jsx"></script>
+    <script type="module">
+      // Dynamically load a .jsx file based on a query param, default to index.jsx
+      const params = new URLSearchParams(window.location.search);
+      const page = params.get('page') || 'index';
+      import(`./frontend/${page}.jsx`).catch(e => {
+        document.getElementById('root').innerText = 'Failed to load page: ' + page;
+      });
+    </script>
 </body>
 </html>

@@ -1,20 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ritsu Web</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ritsu Web</title>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="module">
-      // Dynamically load a .jsx file based on a query param, default to index.jsx
-      const params = new URLSearchParams(window.location.search);
-      const page = params.get('page') || 'index';
-      import(`./frontend/${page}.jsx`).catch(e => {
-        document.getElementById('root').innerText = 'Failed to load page: ' + page;
-      });
-    </script>
+  <div id="root"></div>
+  <script type="module" src="./frontend/ui/screens/index.jsx"></script>
 </body>
 </html>

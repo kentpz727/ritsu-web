@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "A rhythm game stats tracker on web.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "parcel index.html"
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -26,6 +29,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "parcel": "^2.16.4"
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
   }
 }

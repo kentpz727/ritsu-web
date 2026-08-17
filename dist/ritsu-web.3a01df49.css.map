@@ -1,1 +1,0 @@
-{"mappings":"AAAA;;;;;;;AAMA","sources":["style.css"],"sourcesContent":["body {\n    font-family: Arial, sans-serif;\n    margin: 2rem;\n    background: #fafafa;\n    color: #222;\n}\nh1 {\n    color: #007acc;\n}\n"],"names":[],"version":3,"file":"ritsu-web.3a01df49.css.map","sourceRoot":"/__parcel_source_root/"}

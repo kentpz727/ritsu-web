@@ -1,5 +1,11 @@
 {
   "devDependencies": {
-    "@parcel/resolver-default": "^2.16.4"
+    "@parcel/resolver-default": "^2.16.4",
+    "@types/node": "^26.3.0",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
   }
 }

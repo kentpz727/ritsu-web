@@ -1,0 +1,93 @@
+{
+  "scoring": {
+    "accuracy": [
+      {
+        "name": "mixed judgments",
+        "counts": { "perfect": 10, "great": 5, "good": 2, "bad": 1, "miss": 2 },
+        "expected": 60
+      },
+      {
+        "name": "all miss",
+        "counts": { "perfect": 0, "great": 0, "good": 0, "bad": 0, "miss": 5 },
+        "expected": 0
+      },
+      {
+        "name": "no counts",
+        "counts": {},
+        "expected": 0
+      }
+    ],
+    "totalNotes": [
+      {
+        "counts": { "perfect": 10, "great": 5, "good": 2, "bad": 1, "miss": 2 },
+        "expected": 20
+      }
+    ],
+    "parseDifficultySort": [
+      { "input": "Master 14+", "expected": 14.5 },
+      { "input": "14", "expected": 14 },
+      { "input": "Level 9.5", "expected": 9.5 },
+      { "input": "Expert", "expected": 0 },
+      { "input": "12+", "expected": 12.5 }
+    ],
+    "isMissField": [
+      { "field": { "key": "miss", "label": "Miss" }, "expected": true },
+      { "field": { "key": "perfect", "label": "Perfect" }, "expected": false },
+      { "field": { "key": "x", "label": "x", "isMiss": true }, "expected": true },
+      { "field": { "key": "miss", "label": "Miss", "isMiss": false }, "expected": false }
+    ],
+    "universalCombo": {
+      "counts": { "perfect": 10, "great": 5, "miss": 2 },
+      "expected": 15
+    },
+    "rankingValue": {
+      "counts": { "perfect": 10, "great": 5, "good": 2, "bad": 1, "miss": 2 },
+      "score": { "totalScore": 1000000, "maxCombo": 500, "accuracy": 98.5 },
+      "expected": { "SCORE": 20000000, "ACCURACY": 1970, "COMBO": 10000 }
+    }
+  },
+  "config": {
+    "parsed": {
+      "configVersion": 7,
+      "useRankOcr": false,
+      "useAccuracyOcr": false,
+      "gameName": "Golden Game",
+      "titleRect": { "x": 0.1, "y": 0.2, "w": 0.3, "h": 0.4 },
+      "judgments": [{ "key": "perfect", "label": "Perfect", "weight": 1 }],
+      "metrics": [],
+      "misc": [{ "key": "fullCombo", "label": "Full Combo", "type": "boolean" }]
+    },
+    "dedupedKeys": {
+      "judgments": ["perfect", "perfect_2", "field"],
+      "metrics": ["perfect_3"],
+      "misc": ["field_2"],
+      "renamed": [
+        { "from": "perfect", "to": "perfect_2" },
+        { "from": "(empty)", "to": "field" },
+        { "from": "perfect", "to": "perfect_3" },
+        { "from": "(empty)", "to": "field_2" }
+      ]
+    }
+  },
+  "details": {
+    "withConfig": {
+      "judgments": [{ "key": "perfect", "value": "100", "label": "Perfect" }],
+      "metrics": [{ "key": "score", "value": "1000000", "label": "Score" }],
+      "misc": [{ "key": "fullCombo", "value": "true", "label": "Full Combo" }]
+    },
+    "withoutConfig": {
+      "judgments": [{ "key": "perfect", "value": "100", "label": "perfect" }],
+      "metrics": [
+        { "key": "score", "value": "1000000", "label": "score" },
+        { "key": "unknown", "value": "x", "label": "unknown" }
+      ],
+      "misc": [{ "key": "fullCombo", "value": "true", "label": "fullCombo" }]
+    }
+  },
+  "db": {
+    "exportScores": 1,
+    "hasGameConfigs": false,
+    "importIntoFresh": { "imported": 0, "skipped": 1, "skippedGames": ["Golden Game"] },
+    "duplicateImportTotal": 3
+  }
+}

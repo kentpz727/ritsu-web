@@ -83,9 +83,9 @@ describe('config field enumeration', () => {
 
 describe('config parsing edge cases', () => {
   it('rejects non-object JSON and missing names', () => {
-    expect(() => parseGameConfig('[]')).toThrow('Config is missing gameName');
-    expect(() => parseGameConfig('{}')).toThrow('Config is missing gameName');
-    expect(() => parseGameConfig('{"gameName":42}')).toThrow('Config is missing gameName');
+    expect(() => parseGameConfig('[]')).toThrow(/Expected a config object/);
+    expect(() => parseGameConfig('{}')).toThrow(/gameName/);
+    expect(() => parseGameConfig('{"gameName":42}')).toThrow(/gameName/);
   });
 
   it('preserves unknown top-level properties and defaults version flags', () => {

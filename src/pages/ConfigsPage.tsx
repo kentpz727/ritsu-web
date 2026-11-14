@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { listConfigs, listDeletedConfigs, setGameIcon, softDeleteConfig, restoreConfig, countScoresForConfig, upsertConfig, type GameConfigRow } from '../lib/db/dexie.ts';
-import { dedupeKeys, parseGameConfig } from '../lib/config/types.ts';
+import { formatConfigIssues, validateGameConfigJson, validateGameConfigObject } from '../lib/config/types.ts';
 import { canConfirmDelete, configDeleteImpact } from '../lib/config/deleteImpact.ts';
 import { GameIcon, fileToIconBlob } from '../components/gameIcon.tsx';
 
@@ -67,7 +67,12 @@ export default function ConfigsPage() {
       useRankOcr: true,
       useAccuracyOcr: false,
     };
-    await upsertConfig(clean, JSON.stringify(blank), ver);
+    const validated = validateGameConfigObject(blank);
+    if (!validated.config) {
+      setAddErr(`Config rejected: ${formatConfigIssues(validated.errors)}`);
+      return;
+    }
+    await upsertConfig(clean, JSON.stringify(validated.config), ver);
     setNewName('');
     setNewVersion('1');
     setAddErr('');
@@ -76,14 +81,16 @@ export default function ConfigsPage() {
   }
 
   async function importJson(text: string) {
+    const result = validateGameConfigJson(text);
+    if (!result.config || result.errors.length > 0) {
+      setMsg(`Import failed:\n${formatConfigIssues(result.errors)}`);
+      return;
+    }
     try {
-      const cfg = parseGameConfig(text);
-      const { cfg: clean, renamed } = dedupeKeys(cfg);
+      const clean = result.config;
       await upsertConfig(clean.gameName, JSON.stringify(clean), clean.configVersion ?? 1);
-      setMsg(
-        `Imported ${clean.gameName}` +
-          (renamed.length > 0 ? ` (duplicate keys renamed: ${renamed.map((r) => `${r.from} → ${r.to}`).join(', ')})` : ''),
-      );
+      const notes = result.warnings.map((w) => `${w.path}: ${w.message}`);
+      setMsg(`Imported ${clean.gameName}` + (notes.length > 0 ? `\n${notes.join('\n')}` : ''));
     } catch (e) {
       setMsg(`Import failed: ${(e as Error).message}`);
     }
@@ -164,7 +171,7 @@ export default function ConfigsPage() {
           <button className="btn" onClick={() => importJson(draft)}>Save draft</button>
         </div>
         <textarea className="input" rows={8} value={draft} onChange={(e) => setDraft(e.target.value)} style={{ marginTop: 12, fontFamily: 'monospace' }} />
-        {msg && <p className="muted">{msg}</p>}
+        {msg && <p className="muted" style={{ whiteSpace: 'pre-line' }}>{msg}</p>}
       </div>
       {deleteTarget && (
         <div

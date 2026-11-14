@@ -1,6 +1,20 @@
 // Port of Android `data/GameConfigData.kt` — JSON config system.
 // All coordinates are normalized 0.0–1.0 so configs are resolution-independent.
 
+import {
+  ConfigValidationError,
+  dedupeKeys,
+  formatConfigIssues,
+  validateGameConfigJson,
+  validateGameConfigObject,
+  type ConfigIssue,
+  type ConfigValidation,
+} from './schema.ts';
+
+export { ConfigValidationError, dedupeKeys, formatConfigIssues, validateGameConfigJson, validateGameConfigObject };
+export type { ConfigIssue, ConfigValidation };
+
+
 export interface OcrRect {
   x: number;
   y: number;
@@ -77,22 +91,9 @@ export function fieldEntries(
 }
 
 export function parseGameConfig(json: string): GameConfigData {
-  const raw = JSON.parse(json) as GameConfigData;
-  if (!raw.gameName || typeof raw.gameName !== 'string') throw new Error('Config is missing gameName');
-  // Drop null/invalid field entries (heals configs corrupted by the old
-  // global-index bug, which persisted sparse arrays as nulls).
-  const cleanList = (l: unknown): ConfigField[] =>
-    Array.isArray(l) ? l.filter((f): f is ConfigField => !!f && typeof (f as ConfigField).key === 'string') : [];
-  const { judgments, metrics, misc, ...rest } = raw;
-  return {
-    configVersion: 1,
-    useRankOcr: true,
-    useAccuracyOcr: false,
-    ...rest,
-    judgments: cleanList(judgments),
-    metrics: cleanList(metrics),
-    misc: cleanList(misc),
-  };
+  const { config, errors } = validateGameConfigJson(json);
+  if (!config || errors.length > 0) throw new ConfigValidationError(errors);
+  return config;
 }
 
 // ---- Dynamic field management + visibility ----
@@ -127,40 +128,6 @@ const DEFAULT_SLOT_RECT: OcrRect = { x: 0.1, y: 0.1, w: 0.3, h: 0.08 };
 
 export function defaultSlotRect(): OcrRect {
   return { ...DEFAULT_SLOT_RECT };
-}
-
-/**
- * Enforce unique field keys across all categories: every repeat of a name is
- * renamed with an underscore plus its usage index (perfect, perfect_2, ...).
- * Runs at config write-entry points (import, draft save); the BoxEditor add
- * flow and rename guard already enforce the same rule live.
- */
-export function dedupeKeys(cfg: GameConfigData): { cfg: GameConfigData; renamed: Array<{ from: string; to: string }> } {
-  const taken = new Set<string>();
-  const renamed: Array<{ from: string; to: string }> = [];
-  const fix = (f: ConfigField): ConfigField => {
-    if (!f || typeof f.key !== 'string') return f;
-    if (f.key !== '' && !taken.has(f.key)) {
-      taken.add(f.key);
-      return f;
-    }
-    const base = (f.key === '' ? 'field' : f.key).replace(/_\d+$/, '') || 'field';
-    let key = base;
-    let n = 2;
-    while (taken.has(key)) key = `${base}_${n++}`;
-    taken.add(key);
-    if (key !== f.key) renamed.push({ from: f.key === '' ? '(empty)' : f.key, to: key });
-    return key === f.key ? f : { ...f, key };
-  };
-  return {
-    cfg: {
-      ...cfg,
-      judgments: (cfg.judgments ?? []).map(fix),
-      metrics: (cfg.metrics ?? []).map(fix),
-      misc: (cfg.misc ?? []).map(fix),
-    },
-    renamed,
-  };
 }
 
 export function hasSlot(cfg: GameConfigData | null | undefined, key: string): boolean {

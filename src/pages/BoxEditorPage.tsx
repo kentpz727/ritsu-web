@@ -8,7 +8,9 @@ import {
   allFieldsWithCategory,
   defaultSlotRect,
   fieldEntries,
+  formatConfigIssues,
   parseGameConfig,
+  validateGameConfigObject,
   type ConfigCategory,
   type ConfigField,
   type ConfigFieldType,
@@ -42,6 +44,7 @@ export default function BoxEditorPage() {
   const [sel, setSel] = useState<string>('scoreRect');
   const [rect, setRect] = useState<OcrRect>({ x: 0.1, y: 0.1, w: 0.3, h: 0.08 });
   const [cursor, setCursor] = useState('crosshair');
+  const [msg, setMsg] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<DragState | null>(null);
   // Add-field form state.
@@ -55,8 +58,13 @@ export default function BoxEditorPage() {
 
   useEffect(() => {
     db.game_configs.get(Number(configId)).then((row) => {
-      if (row) {
-        try { setCfg(parseGameConfig(row.configData)); } catch { setCfg(null); }
+      if (!row) return;
+      try {
+        setCfg(parseGameConfig(row.configData));
+        setMsg('');
+      } catch (e) {
+        setCfg(null);
+        setMsg(`Config rejected:\n${(e as Error).message}`);
       }
     });
   }, [configId]);
@@ -256,10 +264,17 @@ export default function BoxEditorPage() {
   }
 
   async function persist(next: GameConfigData) {
+    // P-03: never write an invalid config; clamp/normalize safe values first.
+    const validated = validateGameConfigObject(next);
+    if (!validated.config || validated.errors.length > 0) {
+      setMsg(`Not saved:\n${formatConfigIssues(validated.errors)}`);
+      return;
+    }
     const row = await db.game_configs.get(Number(configId));
     if (!row) return;
-    await db.game_configs.update(row.id!, { configData: JSON.stringify(next) });
-    setCfg(next);
+    await db.game_configs.update(row.id!, { configData: JSON.stringify(validated.config) });
+    setCfg(validated.config);
+    setMsg(validated.warnings.length > 0 ? `Saved with fixes:\n${formatConfigIssues(validated.warnings)}` : '');
   }
 
   async function save() {
@@ -391,6 +406,7 @@ export default function BoxEditorPage() {
         Coordinates stay normalized <kbd>x y w h</kbd> (0–1), independent of image size. Press <kbd>Save rect</kbd> to persist.
         Turn on the lock to make other fields' saved boxes unclickable while you work on the selected one.
       </p>
+      {msg && <p className="muted" style={{ whiteSpace: 'pre-line' }}>{msg}</p>}
       <div className="row" style={{ marginBottom: 12 }}>
         <label className="btn">Upload screenshot<input type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} /></label>
         <select className="input" style={{ maxWidth: 280 }} value={sel} onChange={(e) => setSel(e.target.value)}>

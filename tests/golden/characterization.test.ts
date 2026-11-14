@@ -33,8 +33,7 @@ const CONFIG_JSON = JSON.stringify({
   gameName: 'Golden Game',
   configVersion: 7,
   useRankOcr: false,
-  judgments: [{ key: 'perfect', label: 'Perfect', weight: 1 }, null, { label: 'NoKey' }],
-  metrics: 'not-an-array',
+  judgments: [{ key: 'perfect', label: 'Perfect', weight: 1 }],
   misc: [{ key: 'fullCombo', label: 'Full Combo', type: 'boolean' }],
   titleRect: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 },
 });
@@ -78,12 +77,12 @@ describe('golden characterization: scoring math', () => {
 });
 
 describe('golden characterization: config parsing', () => {
-  it('parses defaults, drops invalid entries, and keeps explicit values', () => {
+  it('parses defaults and keeps explicit values', () => {
     expect(parseGameConfig(CONFIG_JSON)).toEqual(golden.config.parsed);
   });
 
   it('rejects a config without gameName', () => {
-    expect(() => parseGameConfig('{"judgments":[]}')).toThrow('Config is missing gameName');
+    expect(() => parseGameConfig('{"judgments":[]}')).toThrow(/gameName/);
   });
 
   it('dedupeKeys makes all field keys unique', () => {

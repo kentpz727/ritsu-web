@@ -238,6 +238,7 @@ describe('JSON import edge cases', () => {
       imported: 0,
       skipped: 2,
       skippedGames: ['Missing A', 'Missing B'],
+      configsImported: 0,
     });
   });
 

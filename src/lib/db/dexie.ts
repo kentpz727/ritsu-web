@@ -200,8 +200,17 @@ export async function clearAllData(): Promise<void> {
 // ---- JSON / CSV export-import (byte-compatible with Android DataManager) ----
 
 /** Android ExportData shape (nested). Legacy web exports used a flat shape — import accepts both. */
+export interface ExportGameConfig {
+  gameName: string;
+  configData: string;
+  configVersion: number;
+}
+
 export interface ExportPayload {
+  /** Envelope version: 2 adds gameConfigs[] so a backup restores on a fresh profile. */
+  schemaVersion: number;
   exportTimestamp: number;
+  gameConfigs: ExportGameConfig[];
   scores: Array<{
     genericScore: {
       songTitle: string;
@@ -221,9 +230,15 @@ export interface ExportPayload {
 }
 
 export async function exportToJson(): Promise<string> {
-  const full = await fullScores();
+  const [full, configs] = await Promise.all([fullScores(), listConfigs()]);
   const payload: ExportPayload = {
+    schemaVersion: 2,
     exportTimestamp: Date.now(),
+    gameConfigs: configs.map((c) => ({
+      gameName: c.gameName,
+      configData: c.configData,
+      configVersion: c.configVersion,
+    })),
     scores: full.map((f) => ({
       genericScore: {
         songTitle: f.score.songTitle,
@@ -248,6 +263,8 @@ export interface ImportReport {
   imported: number;
   skipped: number;
   skippedGames: string[];
+  /** Game configs created or updated from the backup envelope. */
+  configsImported: number;
 }
 
 /** Android parity: scores whose game has no local config are SKIPPED (never stub-created). */
@@ -255,9 +272,26 @@ export async function importFromJson(json: string): Promise<ImportReport> {
   const raw = JSON.parse(json) as Partial<ExportPayload> & {
     timestamp?: number;
     scores?: Array<Record<string, unknown>>;
+    gameConfigs?: unknown;
   };
   const list = Array.isArray(raw.scores) ? raw.scores : null;
   if (!list) throw new Error('Invalid Ritsu JSON export');
+
+  // Schema v2: restore configs first so every score can resolve its game on a
+  // fresh profile. Older payloads (no gameConfigs) keep the Android behavior.
+  const configList = Array.isArray(raw.gameConfigs) ? raw.gameConfigs : [];
+  let configsImported = 0;
+  for (const entry of configList) {
+    if (!entry || typeof entry !== 'object') continue;
+    const c = entry as Partial<ExportGameConfig>;
+    const gameName = typeof c.gameName === 'string' ? c.gameName.trim() : '';
+    const configData = typeof c.configData === 'string' ? c.configData : '';
+    if (!gameName || !configData) continue;
+    const version = Number.isFinite(Number(c.configVersion)) ? Math.max(1, Math.trunc(Number(c.configVersion))) : 1;
+    await upsertConfig(gameName, configData, version);
+    configsImported++;
+  }
+
   const configs = await db.game_configs.toArray();
   const idByGame = new Map(configs.map((c) => [c.gameName, c.id!]));
   let imported = 0;
@@ -289,7 +323,7 @@ export async function importFromJson(json: string): Promise<ImportReport> {
     });
     imported++;
   }
-  return { imported, skipped: skippedGames.size, skippedGames: [...skippedGames] };
+  return { imported, skipped: skippedGames.size, skippedGames: [...skippedGames], configsImported };
 }
 
 function csvCell(v: string | number): string {

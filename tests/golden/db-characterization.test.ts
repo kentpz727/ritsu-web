@@ -54,18 +54,22 @@ describe('golden characterization: persistence and backup', () => {
     expect(await db.score_details.where('scoreId').equals(id).count()).toBe(1);
   });
 
-  it('export payload contains scores but no gameConfigs (P-01 baseline)', async () => {
+  it('export payload carries the game configs with the scores (P-01 fixed)', async () => {
     const configId = await upsertConfig('Golden Game', CONFIG, 1);
     await saveFullScore({ ...SCORE, configId });
     const payload = JSON.parse(await exportToJson()) as {
+      schemaVersion?: number;
       scores: unknown[];
-      gameConfigs?: unknown[];
+      gameConfigs?: Array<{ gameName: string; configVersion: number }>;
     };
     expect(payload.scores).toHaveLength(golden.db.exportScores);
     expect(Object.hasOwn(payload, 'gameConfigs')).toBe(golden.db.hasGameConfigs);
+    expect(payload.schemaVersion).toBe(2);
+    expect(payload.gameConfigs).toHaveLength(golden.db.exportedConfigs);
+    expect(payload.gameConfigs?.[0]).toMatchObject({ gameName: 'Golden Game', configVersion: 1 });
   });
 
-  it('import into a fresh profile skips every score whose config is absent (P-01 baseline)', async () => {
+  it('import into a fresh profile restores the config and every score', async () => {
     const configId = await upsertConfig('Golden Game', CONFIG, 1);
     await saveFullScore({ ...SCORE, configId });
     const json = await exportToJson();
@@ -74,7 +78,12 @@ describe('golden characterization: persistence and backup', () => {
     const report = await importFromJson(json);
 
     expect(report).toEqual(golden.db.importIntoFresh);
-    expect(await db.generic_scores.count()).toBe(0);
+    expect(await db.generic_scores.count()).toBe(1);
+    expect(await db.game_configs.count()).toBe(1);
+    const full = await fullScores();
+    expect(full[0].score.songTitle).toBe('Golden Song');
+    expect(full[0].gameName).toBe('Golden Game');
+    expect(full[0].details).toHaveLength(1);
   });
 
   it('re-importing the same payload duplicates score rows (P-09 baseline)', async () => {
@@ -108,7 +117,7 @@ describe('golden characterization: persistence and backup', () => {
       ],
     });
     const report = await importFromJson(legacy);
-    expect(report).toEqual({ imported: 1, skipped: 0, skippedGames: [] });
+    expect(report).toEqual({ imported: 1, skipped: 0, skippedGames: [], configsImported: 0 });
     const full = await fullScores();
     expect(full[0].score.songTitle).toBe('Legacy Song');
     expect(full[0].details).toHaveLength(1);

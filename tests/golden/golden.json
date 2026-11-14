@@ -86,8 +86,14 @@
   },
   "db": {
     "exportScores": 1,
-    "hasGameConfigs": false,
-    "importIntoFresh": { "imported": 0, "skipped": 1, "skippedGames": ["Golden Game"] },
+    "hasGameConfigs": true,
+    "exportedConfigs": 1,
+    "importIntoFresh": {
+      "imported": 1,
+      "skipped": 0,
+      "skippedGames": [],
+      "configsImported": 1
+    },
     "duplicateImportTotal": 3
   }
 }

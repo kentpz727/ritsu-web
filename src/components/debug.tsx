@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { clearAllData, db, deleteScore, downloadFile, repairScores } from '../lib/db/dexie.ts';
+import { clearAllData, db, deleteScore, downloadFile, listConfigs, repairScores } from '../lib/db/dexie.ts';
 import { loadImage, readConfigBoxes, getMatchCandidates, type BenchResult } from '../lib/ocr/bench.ts';
 import { parseGameConfig } from '../lib/config/types.ts';
 
 /** OCR test bench: image + config in, per-value output out. Engine toggle A/Bs Tesseract vs PaddleOCR. */
 export function OcrBench() {
-  const configs = useLiveQuery(() => db.game_configs.toArray(), []);
+  const configs = useLiveQuery(() => listConfigs(), []);
   const [configId, setConfigId] = useState<number | ''>('');
   const [engine, setEngine] = useState<'tesseract' | 'paddle'>('tesseract');
   const [paddleLang, setPaddleLang] = useState('ch');
@@ -115,7 +115,7 @@ export function OcrBench() {
 
 /** Database inspector: raw access to everything stored on the device. */
 export function DbViewer() {
-  const configs = useLiveQuery(() => db.game_configs.toArray(), []);
+  const configs = useLiveQuery(() => listConfigs(), []);
   const scores = useLiveQuery(() => db.generic_scores.orderBy('playTimestamp').reverse().toArray(), []);
   const details = useLiveQuery(() => db.score_details.toArray(), []);
   const [tab, setTab] = useState<'configs' | 'scores' | 'details'>('configs');

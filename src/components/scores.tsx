@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type FullScore } from '../lib/db/dexie.ts';
+import { db, listConfigs, type FullScore } from '../lib/db/dexie.ts';
 import { timeAgo, formatPlayTime } from '../lib/calc/dates.ts';
 import { GameIcon } from './gameIcon.tsx';
 import { hasSlot, isAccuracyEnabled, isRankEnabled, parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
@@ -9,7 +9,7 @@ export function useFullScores(): FullScore[] | undefined {
     const [scores, details, configs] = await Promise.all([
       db.generic_scores.orderBy('playTimestamp').reverse().toArray(),
       db.score_details.toArray(),
-      db.game_configs.toArray(),
+      listConfigs(),
     ]);
     const gameById = new Map(configs.map((c) => [c.id, c.gameName]));
     const byScore = new Map<number, typeof details>();
@@ -32,7 +32,7 @@ export function initials(title: string): string {
 
 export function useConfigMap(): Map<number, GameConfigData> | undefined {
   return useLiveQuery(async () => {
-    const configs = await db.game_configs.toArray();
+    const configs = await listConfigs();
     const map = new Map<number, GameConfigData>();
     for (const c of configs) {
       try {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, saveFullScore } from '../lib/db/dexie.ts';
+import { listConfigs, saveFullScore } from '../lib/db/dexie.ts';
 import { parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
 import { useScoreForm } from './useScoreForm.ts';
 
@@ -8,7 +8,7 @@ const errStyle = { color: '#ff9d9d', fontSize: 11 } as const;
 
 /** Manual score entry (lives in the Debug section): fix-up for screenshots that failed auto-import. */
 export function ManualEntryForm() {
-  const configs = useLiveQuery(() => db.game_configs.toArray(), []);
+  const configs = useLiveQuery(() => listConfigs(), []);
   const [configId, setConfigId] = useState<number | ''>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 

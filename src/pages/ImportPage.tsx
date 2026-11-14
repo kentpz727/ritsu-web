@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, saveFullScore } from '../lib/db/dexie.ts';
+import { db, listConfigs, saveFullScore } from '../lib/db/dexie.ts';
 import { loadImage, readConfigBoxes, getMatchCandidates, type BenchField, type BenchGeneric } from '../lib/ocr/bench.ts';
 import { parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
 import { subscribePastedFiles } from '../lib/pasteBus.ts';
@@ -24,7 +24,7 @@ interface Job {
 // Every box the game config defines is OCR'd; the score saves automatically
 // only when all required metrics read successfully, else it waits for review.
 export default function ImportPage() {
-  const configs = useLiveQuery(() => db.game_configs.toArray(), []);
+  const configs = useLiveQuery(() => listConfigs(), []);
   const [configId, setConfigId] = useState<number | ''>('');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [engine, setEngine] = useState<'tesseract' | 'paddle'>('tesseract');

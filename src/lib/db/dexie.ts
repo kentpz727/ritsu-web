@@ -11,6 +11,10 @@ export interface GameConfigRow {
   displayIconName?: string | null;
   /** Game logo image (downscaled PNG blob). Unindexed: no migration needed. */
   displayIcon?: Blob | null;
+  /** Soft-delete marker. Deleted configs stay recoverable and are hidden from active lists. */
+  deletedAt?: number | null;
+  /** Score ids unlinked by the soft delete, replayed by undo. */
+  deletedScoreIds?: number[] | null;
 }
 
 export interface ScoreRow {
@@ -61,17 +65,76 @@ export const db = new RitsuDB();
 
 // ---- repositories (port of ScoreRepository / ConfigManager / DataManager) ----
 
+/** Scores left without a game config point at this sentinel instead of a missing row. */
+export const UNLINKED_CONFIG_ID = 0;
+
+/** Active configs only; soft-deleted rows are listed by listDeletedConfigs(). */
 export async function listConfigs(): Promise<GameConfigRow[]> {
-  return db.game_configs.toArray();
+  return db.game_configs.filter((c) => c.deletedAt == null).toArray();
+}
+
+export async function listDeletedConfigs(): Promise<GameConfigRow[]> {
+  return db.game_configs.filter((c) => c.deletedAt != null).toArray();
+}
+
+export async function countScoresForConfig(configId: number): Promise<number> {
+  return db.generic_scores.where('configId').equals(configId).count();
+}
+
+/**
+ * Soft-delete a config: hide it, unlink its scores to the sentinel id, and
+ * remember which scores to relink if the user undoes the delete.
+ * Returns the number of unlinked scores.
+ */
+export async function softDeleteConfig(configId: number): Promise<number> {
+  return db.transaction('rw', db.game_configs, db.generic_scores, async () => {
+    const row = await db.game_configs.get(configId);
+    if (!row || row.deletedAt != null) return 0;
+    const scoreIds = (await db.generic_scores.where('configId').equals(configId).primaryKeys()) as number[];
+    await db.game_configs.update(configId, { deletedAt: Date.now(), deletedScoreIds: scoreIds });
+    if (scoreIds.length > 0) {
+      await db.generic_scores.where('id').anyOf(scoreIds).modify({ configId: UNLINKED_CONFIG_ID });
+    }
+    return scoreIds.length;
+  });
+}
+
+/** Undo a soft delete: restore the config and relink every score it owned. */
+export async function restoreConfig(configId: number): Promise<number> {
+  return db.transaction('rw', db.game_configs, db.generic_scores, async () => {
+    const row = await db.game_configs.get(configId);
+    if (!row || row.deletedAt == null) return 0;
+    const scoreIds = row.deletedScoreIds ?? [];
+    if (scoreIds.length > 0) {
+      await db.generic_scores.where('id').anyOf(scoreIds).modify({ configId });
+    }
+    await db.game_configs.update(configId, { deletedAt: null, deletedScoreIds: [] });
+    return scoreIds.length;
+  });
 }
 
 export async function upsertConfig(gameName: string, configData: string, version: number): Promise<number> {
-  const existing = await db.game_configs.where('gameName').equals(gameName).first();
-  if (!existing) return db.game_configs.add({ gameName, configData, configVersion: version });
-  if (version > existing.configVersion) {
-    await db.game_configs.update(existing.id!, { configData, configVersion: version });
-  }
-  return existing.id!;
+  return db.transaction('rw', db.game_configs, db.generic_scores, async () => {
+    const existing = await db.game_configs.where('gameName').equals(gameName).first();
+    if (!existing) return db.game_configs.add({ gameName, configData, configVersion: version });
+    const patch: Partial<GameConfigRow> = {};
+    // A config re-created/imported under a deleted name comes back as active,
+    // relinking the scores the delete unlinked (same recovery path as Undo).
+    if (existing.deletedAt != null) {
+      const scoreIds = existing.deletedScoreIds ?? [];
+      if (scoreIds.length > 0) {
+        await db.generic_scores.where('id').anyOf(scoreIds).modify({ configId: existing.id! });
+      }
+      patch.deletedAt = null;
+      patch.deletedScoreIds = [];
+    }
+    if (version > existing.configVersion) {
+      patch.configData = configData;
+      patch.configVersion = version;
+    }
+    if (Object.keys(patch).length > 0) await db.game_configs.update(existing.id!, patch);
+    return existing.id!;
+  });
 }
 
 export async function saveFullScore(
@@ -99,7 +162,7 @@ export async function fullScores(): Promise<FullScore[]> {
   const [scores, details, configs] = await Promise.all([
     db.generic_scores.orderBy('playTimestamp').reverse().toArray(),
     db.score_details.toArray(),
-    db.game_configs.toArray(),
+    listConfigs(),
   ]);
   const gameById = new Map(configs.map((c) => [c.id, c.gameName]));
   const detailsByScore = new Map<number, ScoreDetailRow[]>();
@@ -292,7 +355,7 @@ export async function importFromJson(json: string): Promise<ImportReport> {
     configsImported++;
   }
 
-  const configs = await db.game_configs.toArray();
+  const configs = await listConfigs();
   const idByGame = new Map(configs.map((c) => [c.gameName, c.id!]));
   let imported = 0;
   const skippedGames = new Set<string>();

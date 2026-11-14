@@ -65,21 +65,14 @@ describe('golden characterization: scoring math', () => {
   }
 
   it('universalCombo excludes miss and sums other judgments', () => {
-    expect(universalCombo(CONFIG, golden.scoring.universalCombo.counts)).toBe(
-      golden.scoring.universalCombo.expected,
-    );
+    expect(universalCombo(CONFIG, golden.scoring.universalCombo.counts)).toBe(golden.scoring.universalCombo.expected);
   });
 
   for (const mode of ['SCORE', 'ACCURACY', 'COMBO'] as const) {
     it(`rankingValue: ${mode} weights by note count`, () => {
-      expect(
-        rankingValue(
-          golden.scoring.rankingValue.counts,
-          CONFIG,
-          golden.scoring.rankingValue.score,
-          mode,
-        ),
-      ).toBe(golden.scoring.rankingValue.expected[mode]);
+      expect(rankingValue(golden.scoring.rankingValue.counts, CONFIG, golden.scoring.rankingValue.score, mode)).toBe(
+        golden.scoring.rankingValue.expected[mode],
+      );
     });
   }
 });

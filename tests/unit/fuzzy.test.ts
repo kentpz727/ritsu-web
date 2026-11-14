@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  GENERIC_RANKS,
-  bestMatch,
-  bestMatchBy,
-  fuzzyDistance,
-  similarity,
-} from '../../src/lib/ocr/fuzzy.ts';
+import { GENERIC_RANKS, bestMatch, bestMatchBy, fuzzyDistance, similarity } from '../../src/lib/ocr/fuzzy.ts';
 
 describe('fuzzy OCR matching', () => {
   it('returns string lengths when one side is empty', () => {

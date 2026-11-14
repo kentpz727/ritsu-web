@@ -234,7 +234,7 @@ export async function readConfigBoxes(
   const diffValRaw = cfg.difficultyValRect ? await ocrField(cfg.difficultyValRect, 'text', 'Level') : null;
   if (!cfg.difficultyValRect) fields.push({ label: 'Level', box: '—', raw: '', value: '— (no box)', ok: true, auto: true });
   // Level is numbers only: letters/symbols are deleted ("Master 14+" -> "14").
-  let difficultyVal = diffValRaw != null ? normalizeLevel(diffValRaw) : '';
+  const difficultyVal = diffValRaw != null ? normalizeLevel(diffValRaw) : '';
   if (cfg.difficultyValRect && diffValRaw != null && difficultyVal === '') {
     const entry = fields.find((r) => r.label === 'Level');
     if (entry) {

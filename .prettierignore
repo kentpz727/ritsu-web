@@ -1,0 +1,9 @@
+# Legacy sources and assessment inputs are not mass-reformatted under the
+# maintenance scope lock. New or touched files can be formatted individually.
+src/**
+Ritsu_Assessment_Raw_Evidence.md
+Ritsu_Software_Maintenance_Assessment.md
+dist
+coverage
+node_modules
+package-lock.json

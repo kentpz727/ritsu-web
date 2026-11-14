@@ -1,14 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import golden from './golden.json';
-import {
-  db,
-  exportToJson,
-  fullScores,
-  importFromJson,
-  saveFullScore,
-  upsertConfig,
-} from '../../src/lib/db/dexie.ts';
+import { db, exportToJson, fullScores, importFromJson, saveFullScore, upsertConfig } from '../../src/lib/db/dexie.ts';
 
 const CONFIG = JSON.stringify({
   gameName: 'Golden Game',

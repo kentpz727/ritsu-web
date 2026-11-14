@@ -243,9 +243,7 @@ describe('JSON import edge cases', () => {
 
   it('defaults missing generic fields on import', async () => {
     await upsertConfig('DB Game', CONFIG, 1);
-    const report = await importFromJson(
-      JSON.stringify({ scores: [{ gameName: 'DB Game', genericScore: {} }] }),
-    );
+    const report = await importFromJson(JSON.stringify({ scores: [{ gameName: 'DB Game', genericScore: {} }] }));
     expect(report.imported).toBe(1);
     const [full] = await fullScores();
     expect(full.score.songTitle).toBe('Unknown');

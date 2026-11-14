@@ -52,9 +52,7 @@ describe('date formatting', () => {
   });
 
   it('formats play time and full date with locale rules', () => {
-    expect(formatPlayTime(ts)).toBe(
-      new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-    );
+    expect(formatPlayTime(ts)).toBe(new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
     expect(formatFull(ts)).toBe(
       new Date(ts).toLocaleString([], {
         month: 'numeric',
@@ -64,9 +62,7 @@ describe('date formatting', () => {
         minute: '2-digit',
       }),
     );
-    expect(monthLabel(ts)).toBe(
-      new Date(ts).toLocaleDateString([], { month: 'long', year: 'numeric' }),
-    );
+    expect(monthLabel(ts)).toBe(new Date(ts).toLocaleDateString([], { month: 'long', year: 'numeric' }));
     expect(monthKey(ts)).toBe('2026-01');
   });
 

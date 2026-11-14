@@ -42,13 +42,6 @@ const EMPTY_FORM: ScoreFormState = {
   playRank: 'S',
 };
 
-/** Numeric text cleaned xxx-only ("007" -> "7"); non-numeric text untouched. */
-function cleanNumericInput(v: string): string {
-  const t = v.trim();
-  if (t === '' || !/^[0-9.]+$/.test(t)) return t;
-  return stripLeadingZeros(t);
-}
-
 /**
  * Shared state + validation for every score write path (manual entry, edit).
  * Invalid input never saves: collect() returns per-field errors instead.

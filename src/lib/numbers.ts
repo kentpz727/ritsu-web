@@ -29,3 +29,32 @@ export function toGraphPoint(
   }
   return { accuracy, totalScore, playTimestamp };
 }
+
+export interface GraphDomain {
+  min: number;
+  max: number;
+}
+
+/**
+ * Y-axis domain for the metric graph. A flat series needs padding so its ticks
+ * do not collapse. Accuracy is capped at 100 when every recorded value is at
+ * or below 100, so a single 100% play cannot invent ticks like 101.00%.
+ * Values genuinely stored above 100 stay visible instead of being clipped.
+ */
+export function graphDomain(values: number[], metric: 'accuracy' | 'score'): GraphDomain {
+  const clean = values.filter((v) => Number.isFinite(v));
+  if (clean.length === 0) return { min: 0, max: 1 };
+
+  const rawMin = Math.min(...clean);
+  const rawMax = Math.max(...clean);
+  let min = rawMin;
+  let max = rawMax;
+
+  if (max === min) {
+    const pad = metric === 'accuracy' ? 0.5 : Math.max(1, Math.abs(max) * 0.01);
+    min = Math.max(0, min - pad);
+    max += pad;
+  }
+  if (metric === 'accuracy' && max > 100 && rawMax <= 100) max = 100;
+  return { min, max };
+}

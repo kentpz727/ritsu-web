@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { FullScore } from '../lib/db/dexie.ts';
 import { formatFull } from '../lib/calc/dates.ts';
-import { toGraphPoint, type GraphPoint } from '../lib/numbers.ts';
+import { toGraphPoint, graphDomain, type GraphPoint } from '../lib/numbers.ts';
 import {
   filterDetailsByConfig,
   hasSlot,
@@ -230,8 +230,7 @@ export function MetricGraph({
   order.forEach((d, k) => slotOf.set(`${d.si}:${d.pi}`, k));
   const nDots = order.length;
   const vals = visible.flatMap((s) => s.points.map((p) => (active === 'accuracy' ? p.accuracy : p.totalScore)));
-  const max = vals.length > 0 ? Math.max(...vals) : 1;
-  const min = vals.length > 0 ? Math.min(...vals) : 0;
+  const { min, max } = graphDomain(vals, active);
   const span = max - min || 1;
   const x = (si: number, pi: number) => PL + (nDots > 1 ? (slotOf.get(`${si}:${pi}`) ?? 0) / (nDots - 1) * iw : iw / 2);
   // X position for trend-line vertices: chronological rank among real dots.

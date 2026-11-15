@@ -47,7 +47,11 @@ export function loadImage(file: File): Promise<HTMLImageElement> {
       URL.revokeObjectURL(url);
       res(img);
     };
-    img.onerror = rej;
+    img.onerror = (error) => {
+      // P-12: failed decodes used to leak one blob URL each; release it here too.
+      URL.revokeObjectURL(url);
+      rej(error);
+    };
     img.src = url;
   });
 }

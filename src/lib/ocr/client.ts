@@ -4,6 +4,7 @@
 // Non-eng models load lazily on first text box and degrade to eng-only offline.
 import { createWorker } from 'tesseract.js';
 import { cleanupNumeric, longestLine, preprocess, hasCJK } from './image.ts';
+import { onPageHide } from './lifecycle.ts';
 export { hasCJK };
 
 export type OcrLang = 'eng' | 'jpn' | 'chi_sim';
@@ -11,10 +12,24 @@ export type OcrKind = 'number' | 'text';
 
 const workerCache = new Map<OcrLang, Awaited<ReturnType<typeof createWorker>>>();
 
+/**
+ * P-12: workers live for the tab lifetime by design (model download is
+ * expensive), so the tab must release them when it goes away. Registered once,
+ * when the first worker is actually created, and only in a real browser.
+ */
+let unloadHook: (() => void) | null = null;
+function ensureUnloadHook(): void {
+  if (unloadHook || typeof window === 'undefined') return;
+  unloadHook = onPageHide(window, () => {
+    void terminateOcr();
+  });
+}
+
 async function getWorker(lang: OcrLang) {
   const cached = workerCache.get(lang);
   if (cached) return cached;
   const worker = await createWorker(lang);
+  ensureUnloadHook();
   workerCache.set(lang, worker);
   return worker;
 }

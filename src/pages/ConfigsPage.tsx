@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { listConfigs, listDeletedConfigs, setGameIcon, softDeleteConfig, restoreConfig, countScoresForConfig, upsertConfig, type GameConfigRow } from '../lib/db/dexie.ts';
+import { listConfigs, listDeletedConfigs, setGameIcon, softDeleteConfig, restoreConfig, countScoresForConfig, upsertConfig, downloadFile, type GameConfigRow } from '../lib/db/dexie.ts';
 import { formatConfigIssues, validateGameConfigJson, validateGameConfigObject } from '../lib/config/types.ts';
 import { canConfirmDelete, configDeleteImpact } from '../lib/config/deleteImpact.ts';
 import { GameIcon, fileToIconBlob } from '../components/gameIcon.tsx';
@@ -136,11 +136,7 @@ export default function ConfigsPage() {
               </button>
             )}
             <button className="btn" onClick={() => {
-              const blob = new Blob([c.configData], { type: 'application/json' });
-              const a = document.createElement('a');
-              a.href = URL.createObjectURL(blob);
-              a.download = `${c.gameName}.json`;
-              a.click();
+              downloadFile(`${c.gameName}.json`, c.configData);
             }}>Export</button>
             <button className="btn" onClick={() => askDelete(c)}>Delete</button>
           </div>

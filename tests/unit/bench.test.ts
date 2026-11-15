@@ -335,8 +335,9 @@ describe('image loading', () => {
     vi.unstubAllGlobals();
   });
 
-  it('rejects when the image fails to load', async () => {
-    vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:bad', revokeObjectURL: () => {} });
+  it('rejects when the image fails to load and revokes the object URL', async () => {
+    const revoke = vi.fn();
+    vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:bad', revokeObjectURL: revoke });
     class FailingImage {
       onload: (() => void) | null = null;
       onerror: ((error: unknown) => void) | null = null;
@@ -347,6 +348,7 @@ describe('image loading', () => {
     vi.stubGlobal('Image', FailingImage);
 
     await expect(loadImage({} as File)).rejects.toThrow('decode failed');
+    expect(revoke).toHaveBeenCalledWith('blob:bad');
     vi.unstubAllGlobals();
   });
 });

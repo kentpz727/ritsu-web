@@ -89,7 +89,13 @@ export default function BoxEditorPage() {
   function onFile(f: File) {
     const url = URL.createObjectURL(f);
     const el = new Image();
-    el.onload = () => setImg(el);
+    // P-12: the decoded image keeps its pixels after the blob URL is released,
+    // so revoke on both outcomes instead of holding the file for the tab lifetime.
+    el.onload = () => {
+      URL.revokeObjectURL(url);
+      setImg(el);
+    };
+    el.onerror = () => URL.revokeObjectURL(url);
     el.src = url;
   }
 

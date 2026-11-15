@@ -26,6 +26,26 @@ body {
 
 a { color: var(--accent); }
 
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible { transform: none; }
+#main-content:focus { outline: none; }
+
 .topbar {
   height: 52px;
   display: flex;
@@ -135,6 +155,7 @@ a { color: var(--accent); }
   border-radius: 5px; padding: 8px 10px; font: inherit; font-size: 12px; width: 100%;
 }
 .card { background: var(--panel); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.card h2 { font-size: 1.17em; margin: 1em 0; }
 .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .muted { color: var(--muted); font-size: 12px; }
 .green { color: var(--good); font-size: 12px; }
@@ -150,5 +171,15 @@ dialog.ritsu::backdrop { background: rgba(0,0,0,.52); }
 .line-chart { width: 100%; height: 160px; background: var(--panel); border-radius: 8px; }
 .progress { height: 2px; background: var(--text); margin-top: 6px; }
 .editor-canvas { max-width: 100%; border: 1px solid var(--card); border-radius: 8px; }
+.editor-canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
 .rect-list { font-size: 12px; }
 kbd { background: rgba(0,0,0,.4); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

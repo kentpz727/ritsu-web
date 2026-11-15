@@ -57,7 +57,7 @@ export function EditScoreDialog({
         style={{ maxWidth: 640, width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg)', marginBottom: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3>Edit score — {item.score.songTitle}</h3>
+        <h2>Edit score — {item.score.songTitle}</h2>
         <p className="muted">Change anything; invalid values block saving and are flagged below.</p>
         {!config && (
           <p className="muted">Game config missing — generic fields stay editable, saved metrics are preserved untouched.</p>
@@ -109,7 +109,7 @@ export function EditScoreDialog({
         </div>
         {config && (config.judgments?.length || config.metrics?.length || config.misc?.length) ? (
           <>
-            <h4 style={{ marginBottom: 4 }}>Game metrics — {config.gameName}</h4>
+            <h3 style={{ marginBottom: 4 }}>Game metrics — {config.gameName}</h3>
             <div className="row">
               {[...(config.judgments ?? []).map((fld) => ({ ...fld })), ...(config.metrics ?? []).map((fld) => ({ ...fld }))].map((fld, i) => (
                 <label key={`${fld.key}-${i}`} style={{ fontSize: 12, minWidth: 130, flex: 1 }}>{fld.label} ({fld.key})

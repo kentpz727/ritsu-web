@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useFullScores, useConfigMap } from '../components/scores.tsx';
 import { GameIcon } from '../components/gameIcon.tsx';
+import { FileButton } from '../components/FileButton.tsx';
 import { BarChart, MetricGraph } from '../components/detail.tsx';
 import { monthKey, monthLabel } from '../lib/calc/dates.ts';
 import { hasSlot, isAccuracyEnabled, isRankEnabled } from '../lib/config/types.ts';
@@ -282,7 +283,7 @@ export default function DataPage() {
 
       <div className="split" style={{ gridTemplateColumns: '1fr 1px 1fr' }}>
         <section>
-          <h3>Top Games</h3>
+          <h2>Top Games</h2>
           {games.map(([g, info], i) => (
             <div className="board-row" key={g}>
               <GameIcon configId={info.configId} label={g} size={60} fallback={i + 1} />
@@ -290,7 +291,7 @@ export default function DataPage() {
             </div>
           ))}
           {games.length === 0 && <p className="muted">No plays this month.</p>}
-          <h3 style={{ marginTop: 24 }}>Top Scores <span className="muted">— Accuracy</span></h3>
+          <h2 style={{ marginTop: 24 }}>Top Scores <span className="muted">— Accuracy</span></h2>
           {topScores.map((f) => {
             const cfg = configMap?.get(f.score.configId);
             const showRank = isRankEnabled(cfg);
@@ -312,7 +313,7 @@ export default function DataPage() {
               </div>
             );
           })}
-          <h3 style={{ marginTop: 24 }}>Top Charts</h3>
+          <h2 style={{ marginTop: 24 }}>Top Charts</h2>
           {charts.map(([k, v]) => (
             <div className="board-row" key={k}>
               <span><div className="mini">{k}</div><div className="mini-sub">{v.plays} plays · {v.game}</div></span>
@@ -321,22 +322,22 @@ export default function DataPage() {
         </section>
         <div className="divider" />
         <section>
-          <h3>Activity Graph</h3>
+          <h2>Activity Graph</h2>
           <BarChart values={period.values} labels={period.labels} caption={period.caption} />
           {period.list.length > 0 ? (
             <p className="green">+{period.list.length} plays {period.summary}. Set {topScores.length} top scores {period.summary}.</p>
           ) : (
             <p className="muted">No activity yet — import scores to fill this graph.</p>
           )}
-          <h3 style={{ marginTop: 24 }}>Game Leaderboard</h3>
+          <h2 style={{ marginTop: 24 }}>Game Leaderboard</h2>
           <MetricGraph series={gameSeries} label="Performance over time" />
           <div className="card">
-            <h3>Export / Import</h3>
+            <h2>Export / Import</h2>
             <p className="muted">Download JSON for backup, CSV for spreadsheets.</p>
             <div className="row">
               <button className="btn" onClick={async () => downloadFile(`ritsu-${Date.now()}.json`, await exportToJson())}>Export JSON</button>
               <button className="btn" onClick={async () => downloadFile(`ritsu-${Date.now()}.csv`, await exportToCsv(), 'text/csv')}>Export CSV</button>
-              <label className="btn">Import JSON<input type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0] && onImportFile(e.target.files[0])} /></label>
+              <FileButton accept=".json" onChange={(e) => e.target.files?.[0] && onImportFile(e.target.files[0])}>Import JSON</FileButton>
               <button className="btn" onClick={async () => { if (confirm('Delete all scores?')) { await clearAllData(); setMsg('All scores deleted.'); } }}>Delete all</button>
               <Link className="btn" to="/configs">Manage configs</Link>
             </div>

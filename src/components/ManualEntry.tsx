@@ -43,9 +43,9 @@ export function ManualEntryForm() {
 
   return (
     <div className="card">
-      <h3>Manual entry</h3>
+      <h2>Manual entry</h2>
       <div className="row" style={{ marginBottom: 12 }}>
-        <select className="input" value={configId} onChange={(e) => setConfigId(e.target.value === '' ? '' : Number(e.target.value))}>
+        <select className="input" value={configId} onChange={(e) => setConfigId(e.target.value === '' ? '' : Number(e.target.value))} aria-label="Game config">
           <option value="">Select game config…</option>
           {(configs ?? []).map((c) => <option key={c.id} value={c.id}>{c.gameName} (v{c.configVersion})</option>)}
         </select>
@@ -97,7 +97,7 @@ export function ManualEntryForm() {
       </div>
       {selectedCfg && (selectedCfg.judgments?.length || selectedCfg.metrics?.length || selectedCfg.misc?.length) ? (
         <>
-          <h4 style={{ marginBottom: 4 }}>Game metrics — {selectedCfg.gameName}</h4>
+          <h3 style={{ marginBottom: 4 }}>Game metrics — {selectedCfg.gameName}</h3>
           <div className="row">
             {[...(selectedCfg.judgments ?? []).map((fld) => ({ ...fld, category: 'Judgment' })), ...(selectedCfg.metrics ?? []).map((fld) => ({ ...fld, category: 'Metric' }))].map((fld, i) => (
               <label key={`${fld.key}-${i}`} style={{ fontSize: 12, minWidth: 130, flex: 1 }}>{fld.label} ({fld.key})

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../lib/db/dexie.ts';
 import { isMissField } from '../lib/calc/scoring.ts';
+import { adjustRectWithKey } from '../lib/config/rectKeyboard.ts';
+import { FileButton } from '../components/FileButton.tsx';
 import {
   GENERIC_SLOTS,
   PRESET_FIELDS,
@@ -389,6 +391,18 @@ export default function BoxEditorPage() {
     void persist(next);
   }
 
+  /** P-05: keyboard move/resize on the focused canvas keeps the same draft flow as pointer drags. */
+  function onCanvasKeyDown(e: React.KeyboardEvent<HTMLCanvasElement>) {
+    if (!img) return;
+    const next = adjustRectWithKey(rect, e.key, {
+      resize: e.ctrlKey || e.metaKey,
+      large: e.shiftKey,
+    });
+    if (!next) return;
+    e.preventDefault();
+    setRect(next);
+  }
+
   // Port of EditorViewModel.autoSetWeights: linearly descending 1.0 → 0.0
   // across judgment order (2dp), so the top grade counts fully.
   function autoWeights() {
@@ -406,10 +420,19 @@ export default function BoxEditorPage() {
         Coordinates stay normalized <kbd>x y w h</kbd> (0–1), independent of image size. Press <kbd>Save rect</kbd> to persist.
         Turn on the lock to make other fields' saved boxes unclickable while you work on the selected one.
       </p>
+      <p className="muted" id="editor-keyboard-help">
+        Keyboard: Tab to the canvas, then use the arrow keys to move the selected box. Hold Ctrl (or Cmd) with an arrow to
+        resize it, and Shift for larger steps. Without a pointer, type the x / y / w / h values above and press{' '}
+        <kbd>Save rect</kbd> to create or update the box.
+      </p>
+      <p className="muted" id="editor-selected-status" aria-live="polite">
+        Selected box: <strong>{sel}</strong> — x {rect.x.toFixed(3)}, y {rect.y.toFixed(3)}, w {rect.w.toFixed(3)}, h{' '}
+        {rect.h.toFixed(3)}
+      </p>
       {msg && <p className="muted" style={{ whiteSpace: 'pre-line' }}>{msg}</p>}
       <div className="row" style={{ marginBottom: 12 }}>
-        <label className="btn">Upload screenshot<input type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} /></label>
-        <select className="input" style={{ maxWidth: 280 }} value={sel} onChange={(e) => setSel(e.target.value)}>
+        <FileButton accept="image/*" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}>Upload screenshot</FileButton>
+        <select className="input" style={{ maxWidth: 280 }} value={sel} onChange={(e) => setSel(e.target.value)} aria-label="Box field">
           {FIELD_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
           {cfg && fieldEntries(cfg).map(({ key, field, category }) => (
             <option key={key} value={key}>{category} · {field.key} ({field.label})</option>
@@ -440,6 +463,12 @@ export default function BoxEditorPage() {
             ref={canvasRef}
             className="editor-canvas"
             style={{ cursor, touchAction: 'none' }}
+            tabIndex={0}
+            role="application"
+            aria-label={`OCR box editor canvas. Selected box ${sel}, x ${rect.x.toFixed(3)}, y ${rect.y.toFixed(3)}, width ${rect.w.toFixed(3)}, height ${rect.h.toFixed(3)}.`}
+            aria-describedby="editor-keyboard-help editor-selected-status"
+            aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Control+ArrowUp Control+ArrowDown Control+ArrowLeft Control+ArrowRight"
+            onKeyDown={onCanvasKeyDown}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}
@@ -451,7 +480,7 @@ export default function BoxEditorPage() {
       </div>
 
       <div className="card" style={{ marginTop: 16 }}>
-        <h3>Generic slots</h3>
+        <h2>Generic slots</h2>
         <p className="muted">Title, score, combo, accuracy, difficulty, level, rank. Clearing one removes it for this game — it will no longer display or OCR. Re-select a cleared slot and draw/save a box to restore it.</p>
         {GENERIC_SLOTS.map(({ key, label }) => {
           const isSet = cfg ? (cfg as unknown as Record<string, OcrRect | null>)[key] != null : false;
@@ -479,7 +508,7 @@ export default function BoxEditorPage() {
       </div>
 
       <div className="card">
-        <h3>Weighted accuracy & combo</h3>
+        <h2>Weighted accuracy & combo</h2>
         <p className="muted">
           Accuracy is <kbd>Σ(value × weight) ÷ Σ(value) × 100</kbd> over all judgments, so Perfect
           counts fully while lower grades contribute only their weight — tune each weight below
@@ -491,7 +520,7 @@ export default function BoxEditorPage() {
 
       {(['Judgment', 'Metric', 'Misc'] as const).map((cat) => (
         <div className="card" key={cat}>
-          <h3>{cat}s {cat === 'Judgment' && <span className="muted">— weight 1 is a full hit</span>}</h3>
+          <h2>{cat}s {cat === 'Judgment' && <span className="muted">— weight 1 is a full hit</span>}</h2>
           {cat === 'Judgment' && (cfg?.judgments?.length ?? 0) >= 2 && (
             <div className="row" style={{ marginBottom: 8 }}>
               <button
@@ -537,7 +566,7 @@ export default function BoxEditorPage() {
       ))}
 
       <div className="card">
-        <h3>Add metric</h3>
+        <h2>Add metric</h2>
         <p className="muted">Pick a generic preset or define a game-specific one. Keys must be unique per game.</p>
         <div className="row">
           <label style={{ fontSize: 12, flex: '2 1 220px' }}>Preset

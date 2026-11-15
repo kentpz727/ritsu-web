@@ -16,9 +16,9 @@ export function TopBar() {
         <span>Ritsu Web</span>
       </button>
       <div className="spacer" />
-      <button className="icon-btn" title="Account" onClick={() => nav('/data')}>◉</button>
-      <button className="icon-btn" title="Debug" onClick={() => nav('/debug')}>🛠</button>
-      <button className="icon-btn" title="Settings" onClick={() => nav('/configs')}>⚙</button>
+      <button className="icon-btn" title="Account" aria-label="Account and data" onClick={() => nav('/data')}>◉</button>
+      <button className="icon-btn" title="Debug" aria-label="Debug tools" onClick={() => nav('/debug')}>🛠</button>
+      <button className="icon-btn" title="Settings" aria-label="Manage game configs" onClick={() => nav('/configs')}>⚙</button>
     </header>
   );
 }
@@ -30,7 +30,7 @@ export function BottomNav() {
         <span className="pill-btn">♫</span>
         <span>Scores</span>
       </NavLink>
-      <NavLink to="/import" title="Import / OCR">
+      <NavLink to="/import" title="Import / OCR" aria-label="Import screenshots with OCR">
         <span className="fab">📷</span>
       </NavLink>
       <NavLink to="/data" className={({ isActive }) => (isActive ? 'active' : '')}>
@@ -60,8 +60,18 @@ export function Layout() {
   }, [nav]);
   return (
     <React.Fragment>
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main-content')?.focus();
+        }}
+      >
+        Skip to content
+      </a>
       <TopBar />
-      <main className="layout">
+      <main className="layout" id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
       <BottomNav />

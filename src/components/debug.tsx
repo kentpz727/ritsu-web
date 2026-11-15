@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { clearAllData, db, deleteScore, downloadFile, listConfigs, repairScores } from '../lib/db/dexie.ts';
 import { loadImage, readConfigBoxes, getMatchCandidates, type BenchResult } from '../lib/ocr/bench.ts';
 import { parseGameConfig } from '../lib/config/types.ts';
+import { FileButton } from './FileButton.tsx';
 
 /** OCR test bench: image + config in, per-value output out. Engine toggle A/Bs Tesseract vs PaddleOCR. */
 export function OcrBench() {
@@ -55,13 +56,13 @@ export function OcrBench() {
 
   return (
     <div className="card">
-      <h3>OCR test bench</h3>
+      <h2>OCR test bench</h2>
       <div className="row" style={{ marginBottom: 12 }}>
-        <select className="input" style={{ maxWidth: 280 }} value={configId} onChange={(e) => setConfigId(e.target.value === '' ? '' : Number(e.target.value))}>
+        <select className="input" style={{ maxWidth: 280 }} value={configId} onChange={(e) => setConfigId(e.target.value === '' ? '' : Number(e.target.value))} aria-label="Game config">
           <option value="">Select game config…</option>
           {(configs ?? []).map((c) => <option key={c.id} value={c.id}>{c.gameName} (v{c.configVersion})</option>)}
         </select>
-        <label className="btn primary">Choose image<input type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} /></label>
+        <FileButton className="btn primary" accept="image/*" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}>Choose image</FileButton>
       </div>
       <div className="row" style={{ marginBottom: 12 }}>
         <button
@@ -127,7 +128,7 @@ export function DbViewer() {
 
   return (
     <div className="card">
-      <h3>Database</h3>
+      <h2>Database</h2>
       <p className="muted">
         User database, stored in this browser: game_configs ({configs?.length ?? 0}) ·
         generic_scores ({scores?.length ?? 0}) · score_details ({details?.length ?? 0}).

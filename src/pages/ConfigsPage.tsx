@@ -5,6 +5,7 @@ import { listConfigs, listDeletedConfigs, setGameIcon, softDeleteConfig, restore
 import { formatConfigIssues, validateGameConfigJson, validateGameConfigObject } from '../lib/config/types.ts';
 import { canConfirmDelete, configDeleteImpact } from '../lib/config/deleteImpact.ts';
 import { GameIcon, fileToIconBlob } from '../components/gameIcon.tsx';
+import { FileButton } from '../components/FileButton.tsx';
 
 export default function ConfigsPage() {
   const configs = useLiveQuery(() => listConfigs(), []);
@@ -114,13 +115,10 @@ export default function ConfigsPage() {
             <span className="muted">v{c.configVersion}</span>
             <span style={{ flex: 1 }} />
             <Link className="btn" to={`/editor/${c.id}`}>BoxEditor</Link>
-            <label className="btn">Logo<input
-              type="file"
+            <FileButton
               accept="image/*"
-              hidden
               onChange={async (e) => {
                 const f = e.target.files?.[0];
-                e.target.value = '';
                 if (!f || c.id == null) return;
                 try {
                   await setGameIcon(c.id, await fileToIconBlob(f));
@@ -129,7 +127,9 @@ export default function ConfigsPage() {
                   setMsg(`Logo failed: ${(err as Error).message}`);
                 }
               }}
-            /></label>
+            >
+              Logo
+            </FileButton>
             {c.displayIcon && (
               <button className="btn" onClick={async () => { if (c.id != null) { await setGameIcon(c.id, null); setMsg(`Logo removed for ${c.gameName}.`); } }}>
                 Remove logo
@@ -148,7 +148,7 @@ export default function ConfigsPage() {
       ))}
       {(deletedConfigs ?? []).length > 0 && (
         <div className="card">
-          <h3>Recently deleted</h3>
+          <h2>Recently deleted</h2>
           <p className="muted">Deleted configs stay here until restored. Their scores are unlinked while deleted.</p>
           {(deletedConfigs ?? []).map((c) => (
             <div className="row" key={c.id} style={{ marginBottom: 8 }}>
@@ -164,13 +164,13 @@ export default function ConfigsPage() {
         </div>
       )}
       <div className="card">
-        <h3>New / Import</h3>
+        <h2>New / Import</h2>
         <div className="row">
           <button className="btn primary" onClick={() => { setAddErr(''); setShowAdd(true); }}>Add config</button>
-          <label className="btn">Import file<input type="file" accept=".json" hidden onChange={(e) => e.target.files?.[0]?.text().then(importJson)} /></label>
+          <FileButton accept=".json" onChange={(e) => e.target.files?.[0]?.text().then(importJson)}>Import file</FileButton>
           <button className="btn" onClick={() => importJson(draft)}>Save draft</button>
         </div>
-        <textarea className="input" rows={8} value={draft} onChange={(e) => setDraft(e.target.value)} style={{ marginTop: 12, fontFamily: 'monospace' }} />
+        <textarea className="input" rows={8} value={draft} onChange={(e) => setDraft(e.target.value)} style={{ marginTop: 12, fontFamily: 'monospace' }} aria-label="Config JSON" />
         {msg && <p className="muted" style={{ whiteSpace: 'pre-line' }}>{msg}</p>}
       </div>
       {deleteTarget && (
@@ -186,7 +186,7 @@ export default function ConfigsPage() {
             style={{ maxWidth: 440, width: '100%', background: 'var(--bg)', marginBottom: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3>Delete {deleteTarget.gameName}?</h3>
+            <h2>Delete {deleteTarget.gameName}?</h2>
             <p className="muted">
               {deleteCount == null ? 'Counting linked scores…' : configDeleteImpact(deleteCount, deleteTarget.gameName)}
             </p>
@@ -223,7 +223,7 @@ export default function ConfigsPage() {
             style={{ maxWidth: 440, width: '100%', background: 'var(--bg)', marginBottom: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3>Add game config</h3>
+            <h2>Add game config</h2>
             <p className="muted">Start blank, then shape its metrics, boxes, and logo in the BoxEditor.</p>
             <label style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>Game name
               <input

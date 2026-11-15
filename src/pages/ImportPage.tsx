@@ -4,6 +4,7 @@ import { db, listConfigs, saveFullScore } from '../lib/db/dexie.ts';
 import { loadImage, readConfigBoxes, getMatchCandidates, type BenchField, type BenchGeneric } from '../lib/ocr/bench.ts';
 import { parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
 import { subscribePastedFiles } from '../lib/pasteBus.ts';
+import { FileButton } from '../components/FileButton.tsx';
 
 interface Job {
   id: string;
@@ -212,14 +213,14 @@ export default function ImportPage() {
       </p>
       <div className="card">
         <div className="row">
-          <select className="input" value={configId} onChange={(e) => setConfigId(e.target.value === '' ? '' : Number(e.target.value))}>
+          <select className="input" value={configId} onChange={(e) => setConfigId(e.target.value === '' ? '' : Number(e.target.value))} aria-label="Game config">
             <option value="">Select game config…</option>
             {(configs ?? []).map((c) => <option key={c.id} value={c.id}>{c.gameName} (v{c.configVersion})</option>)}
           </select>
-          <label className="btn primary">Choose screenshots<input type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files && runOcr(e.target.files)} /></label>
+          <FileButton className="btn primary" accept="image/*" multiple onChange={(e) => e.target.files && runOcr(e.target.files)}>Choose screenshots</FileButton>
           <button className="btn" onClick={pasteFromClipboard}>Paste from clipboard</button>
         </div>
-        <h4 style={{ marginBottom: 4 }}>OCR engine</h4>
+        <h2 style={{ marginBottom: 4 }}>OCR engine</h2>
         <div className="row" style={{ alignItems: 'stretch' }}>
           <div
             className="card"

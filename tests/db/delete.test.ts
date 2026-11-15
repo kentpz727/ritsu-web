@@ -184,6 +184,7 @@ describe('P-02 interaction with legacy import', () => {
       imported: 0,
       skipped: 1,
       skippedGames: ['Game A'],
+      duplicates: 0,
       configsImported: 0,
     });
     expect(await db.generic_scores.count()).toBe(1);

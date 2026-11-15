@@ -35,7 +35,7 @@ beforeEach(async () => {
 
 describe('golden characterization: persistence and backup', () => {
   it('saveFullScore coerces non-finite numerics and writes detail rows', async () => {
-    const id = await saveFullScore({
+    const { id } = await saveFullScore({
       ...SCORE,
       configId: 1,
       difficultySortValue: Number.NaN,
@@ -86,13 +86,13 @@ describe('golden characterization: persistence and backup', () => {
     expect(full[0].details).toHaveLength(1);
   });
 
-  it('re-importing the same payload duplicates score rows (P-09 baseline)', async () => {
+  it('P-09: re-importing the same payload is idempotent', async () => {
     const configId = await upsertConfig('Golden Game', CONFIG, 1);
     await saveFullScore({ ...SCORE, configId });
     const json = await exportToJson();
 
-    expect((await importFromJson(json)).imported).toBe(1);
-    expect((await importFromJson(json)).imported).toBe(1);
+    expect(await importFromJson(json)).toMatchObject({ imported: 0, duplicates: 1 });
+    expect(await importFromJson(json)).toMatchObject({ imported: 0, duplicates: 1 });
     expect(await db.generic_scores.count()).toBe(golden.db.duplicateImportTotal);
   });
 
@@ -117,7 +117,7 @@ describe('golden characterization: persistence and backup', () => {
       ],
     });
     const report = await importFromJson(legacy);
-    expect(report).toEqual({ imported: 1, skipped: 0, skippedGames: [], configsImported: 0 });
+    expect(report).toEqual({ imported: 1, skipped: 0, skippedGames: [], duplicates: 0, configsImported: 0 });
     const full = await fullScores();
     expect(full[0].score.songTitle).toBe('Legacy Song');
     expect(full[0].details).toHaveLength(1);

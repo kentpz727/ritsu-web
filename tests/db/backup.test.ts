@@ -81,6 +81,7 @@ describe('P-01 backup/restore round trip', () => {
       imported: 10,
       skipped: 0,
       skippedGames: [],
+      duplicates: 0,
       configsImported: 2,
     });
     expect(await db.game_configs.count()).toBe(2);
@@ -152,7 +153,7 @@ describe('P-01 backup/restore round trip', () => {
 
     const report = await importFromJson(JSON.stringify(payload));
 
-    expect(report).toEqual({ imported: 1, skipped: 0, skippedGames: [], configsImported: 1 });
+    expect(report).toEqual({ imported: 1, skipped: 0, skippedGames: [], duplicates: 0, configsImported: 1 });
     const configs = await listConfigs();
     expect(configs).toHaveLength(1);
     expect(configs[0].configVersion).toBe(5);
@@ -194,6 +195,7 @@ describe('P-01 backup/restore round trip', () => {
       imported: 1,
       skipped: 1,
       skippedGames: ['Missing Game'],
+      duplicates: 0,
       configsImported: 0,
     });
     const full = await fullScores();
@@ -215,7 +217,7 @@ describe('P-01 backup/restore round trip', () => {
       scores: [],
     };
     const report = await importFromJson(JSON.stringify(payload));
-    expect(report).toEqual({ imported: 0, skipped: 0, skippedGames: [], configsImported: 1 });
+    expect(report).toEqual({ imported: 0, skipped: 0, skippedGames: [], duplicates: 0, configsImported: 1 });
     expect((await listConfigs()).map((c) => c.gameName)).toEqual(['Good']);
   });
 });

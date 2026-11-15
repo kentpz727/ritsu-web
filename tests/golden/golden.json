@@ -92,8 +92,9 @@
       "imported": 1,
       "skipped": 0,
       "skippedGames": [],
+      "duplicates": 0,
       "configsImported": 1
     },
-    "duplicateImportTotal": 3
+    "duplicateImportTotal": 1
   }
 }

@@ -236,6 +236,7 @@ export default function DataPage() {
       const r = await importFromJson(text);
       setMsg(
         `Imported ${r.imported} scores and ${r.configsImported} configs from ${file.name}` +
+          (r.duplicates > 0 ? ` (duplicates skipped: ${r.duplicates})` : '') +
           (r.skippedGames.length > 0 ? ` (skipped unknown games: ${r.skippedGames.join(', ')}) — import their configs first.` : ''),
       );
     } catch (e) {

@@ -35,10 +35,10 @@ export function ManualEntryForm() {
     const { errors: errs, collected } = f.collect();
     setErrors(errs);
     if (!collected) return;
-    await saveFullScore({ configId: Number(configId), ...collected });
+    const saved = await saveFullScore({ configId: Number(configId), ...collected });
     f.reset();
     setErrors({});
-    alert('Score saved to IndexedDB.');
+    alert(saved.duplicate ? 'This play is already in the library — duplicate skipped.' : 'Score saved to IndexedDB.');
   }
 
   return (

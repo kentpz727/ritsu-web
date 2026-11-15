@@ -137,10 +137,26 @@ export async function upsertConfig(gameName: string, configData: string, version
   });
 }
 
+/** Result of a score save. Duplicate saves are skipped and return the existing row id. */
+export interface SaveScoreResult {
+  id: number;
+  duplicate: boolean;
+}
+
 export async function saveFullScore(
   input: Omit<ScoreRow, 'id' | 'importTimestamp'> & { details: Array<Omit<ScoreDetailRow, 'detailId' | 'scoreId'>> },
-): Promise<number> {
+): Promise<SaveScoreResult> {
   return db.transaction('rw', db.generic_scores, db.score_details, async () => {
+    // P-09: the composite index makes a re-import lookup cheap. A score is the
+    // same play when game, song, difficulty, and play time all match.
+    const playTimestamp = finiteOr(input.playTimestamp, Date.now());
+    const existing = await db.generic_scores
+      .where('[configId+songTitle+difficultyName+difficultyVal]')
+      .equals([input.configId, input.songTitle, input.difficultyName, input.difficultyVal])
+      .filter((row) => row.playTimestamp === playTimestamp)
+      .first();
+    if (existing) return { id: existing.id!, duplicate: true };
+
     // Coerce numerics: a single NaN row used to poison whole graph polylines.
     const id = await db.generic_scores.add({
       ...input,
@@ -148,13 +164,13 @@ export async function saveFullScore(
       totalScore: finiteOr(input.totalScore),
       maxCombo: finiteOr(input.maxCombo),
       accuracy: finiteOr(input.accuracy),
-      playTimestamp: finiteOr(input.playTimestamp, Date.now()),
+      playTimestamp,
       importTimestamp: Date.now(),
     });
     if (input.details.length > 0) {
       await db.score_details.bulkAdd(input.details.map((d) => ({ ...d, scoreId: id })));
     }
-    return id;
+    return { id, duplicate: false };
   });
 }
 
@@ -326,6 +342,8 @@ export interface ImportReport {
   imported: number;
   skipped: number;
   skippedGames: string[];
+  /** Scores already present (same game, song, difficulty, and play time). */
+  duplicates: number;
   /** Game configs created or updated from the backup envelope. */
   configsImported: number;
 }
@@ -358,6 +376,7 @@ export async function importFromJson(json: string): Promise<ImportReport> {
   const configs = await listConfigs();
   const idByGame = new Map(configs.map((c) => [c.gameName, c.id!]));
   let imported = 0;
+  let duplicates = 0;
   const skippedGames = new Set<string>();
   for (const s of list) {
     // Android nested shape, or legacy flat web shape.
@@ -371,7 +390,7 @@ export async function importFromJson(json: string): Promise<ImportReport> {
       continue;
     }
     const details = (nested.details ?? flat.details ?? []) as Array<{ key: string; value: string; category: string }>;
-    await saveFullScore({
+    const saved = await saveFullScore({
       configId,
       songTitle: String(g.songTitle ?? 'Unknown'),
       difficultyName: String(g.difficultyName ?? 'Unknown'),
@@ -384,9 +403,10 @@ export async function importFromJson(json: string): Promise<ImportReport> {
       playTimestamp: Number(g.playTimestamp) || Date.now(),
       details: details.map((d) => ({ key: String(d.key), value: String(d.value), category: String(d.category) })),
     });
-    imported++;
+    if (saved.duplicate) duplicates++;
+    else imported++;
   }
-  return { imported, skipped: skippedGames.size, skippedGames: [...skippedGames], configsImported };
+  return { imported, skipped: skippedGames.size, skippedGames: [...skippedGames], duplicates, configsImported };
 }
 
 function csvCell(v: string | number): string {

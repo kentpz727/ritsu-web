@@ -99,7 +99,7 @@ describe('score repository', () => {
 
   it('updateFullScore replaces columns and details with numeric coercion', async () => {
     const configId = await upsertConfig('DB Game', CONFIG, 1);
-    const id = await saveFullScore({ ...SCORE, configId });
+    const { id } = await saveFullScore({ ...SCORE, configId });
 
     await updateFullScore(
       id,
@@ -123,15 +123,15 @@ describe('score repository', () => {
 
   it('updateFullScore clears details when given an empty list', async () => {
     const configId = await upsertConfig('DB Game', CONFIG, 1);
-    const id = await saveFullScore({ ...SCORE, configId });
+    const { id } = await saveFullScore({ ...SCORE, configId });
     await updateFullScore(id, { songTitle: 'No details' }, []);
     expect(await db.score_details.where('scoreId').equals(id).count()).toBe(0);
   });
 
   it('deleteScore removes the score and its details only', async () => {
     const configId = await upsertConfig('DB Game', CONFIG, 1);
-    const id = await saveFullScore({ ...SCORE, configId });
-    const otherId = await saveFullScore({ ...SCORE, configId, songTitle: 'Other' });
+    const { id } = await saveFullScore({ ...SCORE, configId });
+    const { id: otherId } = await saveFullScore({ ...SCORE, configId, songTitle: 'Other' });
 
     await deleteScore(id);
     expect(await db.generic_scores.get(id)).toBeUndefined();
@@ -238,6 +238,7 @@ describe('JSON import edge cases', () => {
       imported: 0,
       skipped: 2,
       skippedGames: ['Missing A', 'Missing B'],
+      duplicates: 0,
       configsImported: 0,
     });
   });

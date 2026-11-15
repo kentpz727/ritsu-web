@@ -158,7 +158,7 @@ export default function ImportPage() {
           });
           continue;
         }
-        await saveFullScore({
+        const saved = await saveFullScore({
           configId: cid,
           songTitle: g.title,
           difficultyName: g.difficultyName,
@@ -171,7 +171,11 @@ export default function ImportPage() {
           playTimestamp: f.lastModified || Date.now(),
           details: bench.details,
         });
-        patchJob(id, { status: `saved ✓ ${g.accuracy.toFixed(2)}%`, results: bench.fields, saved: true });
+        patchJob(id, {
+          status: saved.duplicate ? 'duplicate — already in library' : `saved ✓ ${g.accuracy.toFixed(2)}%`,
+          results: bench.fields,
+          saved: true,
+        });
       } catch (e) {
         patchJob(id, { status: `error: ${(e as Error).message}`, saved: false });
       }
@@ -181,7 +185,7 @@ export default function ImportPage() {
   async function savePending(job: Job) {
     if (!job.pending || configId === '') return;
     const p = job.pending;
-    await saveFullScore({
+    const saved = await saveFullScore({
       configId: Number(configId),
       songTitle: p.generic.title,
       difficultyName: p.generic.difficultyName,
@@ -194,7 +198,13 @@ export default function ImportPage() {
       playTimestamp: p.playTimestamp,
       details: p.details,
     });
-    patchJob(job.id, { status: `saved ✓ (partial: ${p.missing.join(', ')})`, saved: true, pending: undefined });
+    patchJob(job.id, {
+      status: saved.duplicate
+        ? 'duplicate — already in library'
+        : `saved ✓ (partial: ${p.missing.join(', ')})`,
+      saved: true,
+      pending: undefined,
+    });
   }
 
   runOcrRef.current = runOcr;

@@ -59,6 +59,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # P-06 fixes the known advisories and makes this step blocking.
+      # P-06: high/critical advisories block the build. Moderate advisories
+      # without an upstream patch are reported in the job log but do not fail.
       - run: npm audit --audit-level=high
-        continue-on-error: true

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../lib/db/dexie.ts';
 import { isMissField } from '../lib/calc/scoring.ts';
 import { adjustRectWithKey } from '../lib/config/rectKeyboard.ts';
+import { debounce } from '../lib/debounce.ts';
 import { FileButton } from '../components/FileButton.tsx';
 import {
   GENERIC_SLOTS,
@@ -39,6 +40,26 @@ interface DragState {
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const MIN_SIZE = 0.005;
 
+/** Every box the editor draws and hit-tests: saved config boxes plus the draft. */
+function boxesFor(
+  cfg: GameConfigData | null,
+  sel: string,
+  rect: OcrRect,
+): Array<{ key: string; rect: OcrRect; color: string }> {
+  const out: Array<{ key: string; rect: OcrRect; color: string }> = [];
+  if (cfg) {
+    for (const k of FIELD_KEYS) {
+      const r = (cfg as unknown as Record<string, OcrRect | null>)[k];
+      if (r) out.push({ key: k, rect: r, color: k === sel ? '#5df3ff' : '#e6f3f4' });
+    }
+    fieldEntries(cfg).forEach(({ key, field }) => {
+      if (field.ocrRect) out.push({ key, rect: field.ocrRect, color: '#2683b6' });
+    });
+  }
+  out.push({ key: sel, rect, color: '#6eeb5e' });
+  return out;
+}
+
 export default function BoxEditorPage() {
   const { configId } = useParams();
   const [cfg, setCfg] = useState<GameConfigData | null>(null);
@@ -57,6 +78,43 @@ export default function BoxEditorPage() {
   // Lock toggle: when on, saved boxes of other fields are not clickable —
   // clicks/drags on them are ignored, so the selected field can't be disturbed.
   const [lockOthers, setLockOthers] = useState(() => localStorage.getItem('ritsu-lock-others') === '1');
+
+  // P-14: text edits update local state immediately but persist once the user
+  // pauses, so renaming a label no longer issues a read/write per keystroke.
+  const pendingCfg = useRef<GameConfigData | null>(null);
+
+  const writeConfig = useCallback(
+    async (next: GameConfigData): Promise<void> => {
+      // P-03: never write an invalid config; clamp/normalize safe values first.
+      const validated = validateGameConfigObject(next);
+      if (!validated.config || validated.errors.length > 0) {
+        setMsg(`Not saved:\n${formatConfigIssues(validated.errors)}`);
+        return;
+      }
+      const row = await db.game_configs.get(Number(configId));
+      if (!row) return;
+      await db.game_configs.update(row.id!, { configData: JSON.stringify(validated.config) });
+      // A newer draft may have arrived while this write was in flight.
+      if (pendingCfg.current == null) setCfg(validated.config);
+      setMsg(validated.warnings.length > 0 ? `Saved with fixes:\n${formatConfigIssues(validated.warnings)}` : '');
+    },
+    [configId],
+  );
+
+  const saveDraft = useMemo(
+    () =>
+      debounce((next: GameConfigData) => {
+        pendingCfg.current = null;
+        void writeConfig(next);
+      }, 300),
+    [writeConfig],
+  );
+
+  // Closing the editor must not drop a debounced edit.
+  useEffect(() => () => {
+    pendingCfg.current = null;
+    saveDraft.flush();
+  }, [saveDraft]);
 
   useEffect(() => {
     db.game_configs.get(Number(configId)).then((row) => {
@@ -101,52 +159,63 @@ export default function BoxEditorPage() {
 
   /** All boxes for drawing + hit-testing, draft last (topmost). */
   function boxes(): Array<{ key: string; rect: OcrRect; color: string }> {
-    const out: Array<{ key: string; rect: OcrRect; color: string }> = [];
-    if (cfg) {
-      for (const k of FIELD_KEYS) {
-        const r = (cfg as unknown as Record<string, OcrRect | null>)[k];
-        if (r) out.push({ key: k, rect: r, color: k === sel ? '#5df3ff' : '#e6f3f4' });
-      }
-      fieldEntries(cfg).forEach(({ key, field }) => {
-        if (field.ocrRect) out.push({ key, rect: field.ocrRect, color: '#2683b6' });
-      });
-    }
-    out.push({ key: sel, rect, color: '#6eeb5e' });
-    return out;
+    return boxesFor(cfg, sel, rect);
   }
 
+  // P-14: at most one paint per frame. The pending frame reads the latest state
+  // ref instead of being cancelled on each render, so a fast drag paints every
+  // frame rather than starving until the pointer pauses.
+  const paintRef = useRef({ img, cfg, sel, rect, lockOthers });
+  const frameRef = useRef<number | null>(null);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !img) return;
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(img, 0, 0);
-    const lineW = Math.max(2, img.naturalWidth * 0.003);
-    for (const { rect: r, color, key } of boxes()) {
-      const px = r.x * img.naturalWidth;
-      const py = r.y * img.naturalHeight;
-      const pw = r.w * img.naturalWidth;
-      const ph = r.h * img.naturalHeight;
-      // Locked-out boxes (lock toggle on, not the selected field) render dimmed.
-      ctx.globalAlpha = lockOthers && key !== sel ? 0.3 : 1;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = key === sel ? lineW * 1.5 : lineW;
-      ctx.strokeRect(px, py, pw, ph);
-      ctx.fillStyle = color;
-      ctx.font = '16px Poppins';
-      ctx.fillText(key === sel ? `${key} (draft)` : key, px + 4, py - 4);
-      if (key === sel) {
-        // Resize handles on the selected box.
-        const s = Math.max(6, img.naturalWidth * 0.008);
+    paintRef.current = { img, cfg, sel, rect, lockOthers };
+    if (!img || frameRef.current != null) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      const latest = paintRef.current;
+      const image = latest.img;
+      const canvas = canvasRef.current;
+      if (!canvas || !image) return;
+      // Resizing clears the bitmap; only do it when the image size changed.
+      if (canvas.width !== image.naturalWidth) canvas.width = image.naturalWidth;
+      if (canvas.height !== image.naturalHeight) canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext('2d')!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0);
+      const lineW = Math.max(2, image.naturalWidth * 0.003);
+      for (const { rect: r, color, key } of boxesFor(latest.cfg, latest.sel, latest.rect)) {
+        const px = r.x * image.naturalWidth;
+        const py = r.y * image.naturalHeight;
+        const pw = r.w * image.naturalWidth;
+        const ph = r.h * image.naturalHeight;
+        // Locked-out boxes (lock toggle on, not the selected field) render dimmed.
+        ctx.globalAlpha = latest.lockOthers && key !== latest.sel ? 0.3 : 1;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = key === latest.sel ? lineW * 1.5 : lineW;
+        ctx.strokeRect(px, py, pw, ph);
         ctx.fillStyle = color;
-        for (const [hx, hy] of [[px, py], [px + pw, py], [px, py + ph], [px + pw, py + ph]]) {
-          ctx.fillRect(hx - s / 2, hy - s / 2, s, s);
+        ctx.font = '16px Poppins';
+        ctx.fillText(key === latest.sel ? `${key} (draft)` : key, px + 4, py - 4);
+        if (key === latest.sel) {
+          // Resize handles on the selected box.
+          const s = Math.max(6, image.naturalWidth * 0.008);
+          ctx.fillStyle = color;
+          for (const [hx, hy] of [[px, py], [px + pw, py], [px, py + ph], [px + pw, py + ph]]) {
+            ctx.fillRect(hx - s / 2, hy - s / 2, s, s);
+          }
         }
+        ctx.globalAlpha = 1;
       }
-      ctx.globalAlpha = 1;
-    }
-  }); // redraw every render: cheap and always reflects drag state
+    });
+  }, [img, rect, cfg, sel, lockOthers]);
+
+  useEffect(
+    () => () => {
+      if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    },
+    [],
+  );
 
   function toNorm(e: React.PointerEvent<HTMLCanvasElement>): { x: number; y: number } {
     const canvas = canvasRef.current!;
@@ -271,18 +340,11 @@ export default function BoxEditorPage() {
     setCursor('crosshair');
   }
 
+  /** Immediate write for discrete actions (toggles, add/delete, Save rect). */
   async function persist(next: GameConfigData) {
-    // P-03: never write an invalid config; clamp/normalize safe values first.
-    const validated = validateGameConfigObject(next);
-    if (!validated.config || validated.errors.length > 0) {
-      setMsg(`Not saved:\n${formatConfigIssues(validated.errors)}`);
-      return;
-    }
-    const row = await db.game_configs.get(Number(configId));
-    if (!row) return;
-    await db.game_configs.update(row.id!, { configData: JSON.stringify(validated.config) });
-    setCfg(validated.config);
-    setMsg(validated.warnings.length > 0 ? `Saved with fixes:\n${formatConfigIssues(validated.warnings)}` : '');
+    saveDraft.cancel();
+    pendingCfg.current = null;
+    await writeConfig(next);
   }
 
   async function save() {
@@ -340,7 +402,11 @@ export default function BoxEditorPage() {
     const lk = listKeyOf(cat);
     const list = [...(cfg[lk] ?? [])];
     list[idx] = { ...list[idx], ...patch };
-    void persist({ ...cfg, [lk]: list });
+    const next = { ...cfg, [lk]: list };
+    // Keep the controlled input responsive now; persist after the typing pause.
+    setCfg(next);
+    pendingCfg.current = next;
+    saveDraft(next);
   }
 
   function deleteField(cat: ConfigCategory, idx: number) {

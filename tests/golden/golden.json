@@ -71,17 +71,23 @@
   },
   "details": {
     "withConfig": {
-      "judgments": [{ "key": "perfect", "value": "100", "label": "Perfect" }],
-      "metrics": [{ "key": "score", "value": "1000000", "label": "Score" }],
-      "misc": [{ "key": "fullCombo", "value": "true", "label": "Full Combo" }]
+      "judgments": [{ "key": "perfect", "value": "100", "label": "Perfect", "display": "100" }],
+      "metrics": [{ "key": "score", "value": "1000000", "label": "Score", "display": "1000000" }],
+      "misc": [
+        { "key": "fullCombo", "value": "true", "label": "Full Combo", "display": "Yes" },
+        { "key": "clear", "value": "false", "label": "Clear", "display": "No" }
+      ]
     },
     "withoutConfig": {
-      "judgments": [{ "key": "perfect", "value": "100", "label": "perfect" }],
+      "judgments": [{ "key": "perfect", "value": "100", "label": "perfect", "display": "100" }],
       "metrics": [
-        { "key": "score", "value": "1000000", "label": "score" },
-        { "key": "unknown", "value": "x", "label": "unknown" }
+        { "key": "score", "value": "1000000", "label": "score", "display": "1000000" },
+        { "key": "unknown", "value": "x", "label": "unknown", "display": "x" }
       ],
-      "misc": [{ "key": "fullCombo", "value": "true", "label": "fullCombo" }]
+      "misc": [
+        { "key": "fullCombo", "value": "true", "label": "fullCombo", "display": "true" },
+        { "key": "clear", "value": "false", "label": "clear", "display": "false" }
+      ]
     }
   },
   "db": {

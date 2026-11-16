@@ -149,6 +149,8 @@ export interface VisibleDetail {
   key: string;
   value: string;
   label: string;
+  /** Ready-to-render value: boolean misc is Yes/No, an unrecorded boolean is '—'. */
+  display: string;
   detailId?: number;
 }
 
@@ -159,31 +161,59 @@ export interface VisibleDetails {
 }
 
 /**
+ * Display text for a stored Misc value. Booleans are explicit ("Yes"/"No"),
+ * and a boolean with no stored row is "—" so it cannot be confused with false.
+ */
+export function miscDisplay(value: string | null | undefined, isBoolean: boolean): string {
+  if (!isBoolean) return value ?? '';
+  const v = (value ?? '').trim().toLowerCase();
+  if (v === 'true') return 'Yes';
+  if (v === 'false') return 'No';
+  return '—';
+}
+
+/**
  * Partition stored score_details into visible sections, dropping keys the game's
- * config no longer defines (deleted metrics never render).
+ * config no longer defines (deleted metrics never render). Explicit `false`
+ * misc values are kept and rendered as "No"; unrecorded booleans get a row
+ * with "—" so they are distinct from false.
  */
 export function filterDetailsByConfig(
   cfg: GameConfigData | null | undefined,
   details: Array<{ key: string; value: string; category: string; detailId?: number }>,
 ): VisibleDetails {
   const out: VisibleDetails = { judgments: [], metrics: [], misc: [] };
-  const byKey = new Map<string, { label: string; category: ConfigCategory }>();
+  const byKey = new Map<string, { label: string; category: ConfigCategory; boolean: boolean }>();
   if (cfg) {
-    for (const f of cfg.judgments ?? []) byKey.set(f.key, { label: f.label, category: 'Judgment' });
-    for (const f of cfg.metrics ?? []) byKey.set(f.key, { label: f.label, category: 'Metric' });
-    for (const f of cfg.misc ?? []) byKey.set(f.key, { label: f.label, category: 'Misc' });
+    for (const f of cfg.judgments ?? []) byKey.set(f.key, { label: f.label, category: 'Judgment', boolean: false });
+    for (const f of cfg.metrics ?? []) byKey.set(f.key, { label: f.label, category: 'Metric', boolean: false });
+    for (const f of cfg.misc ?? []) {
+      byKey.set(f.key, { label: f.label, category: 'Misc', boolean: f.type === 'boolean' });
+    }
   }
   for (const d of details) {
     if (cfg) {
       const known = byKey.get(d.key);
       if (!known) continue; // deleted / unknown for this game: hide
       const bucket = known.category === 'Judgment' ? out.judgments : known.category === 'Metric' ? out.metrics : out.misc;
-      bucket.push({ key: d.key, value: d.value, label: known.label, detailId: d.detailId });
+      bucket.push({
+        key: d.key,
+        value: d.value,
+        label: known.label,
+        display: known.boolean ? miscDisplay(d.value, true) : d.value,
+        detailId: d.detailId,
+      });
     } else {
       const bucket = d.category === 'Judgment' ? out.judgments : d.category === 'Metric' ? out.metrics : out.misc;
-      bucket.push({ key: d.key, value: d.value, label: d.key, detailId: d.detailId });
+      bucket.push({ key: d.key, value: d.value, label: d.key, display: d.value, detailId: d.detailId });
     }
   }
-  out.misc = out.misc.filter((m) => m.value.toLowerCase() === 'true');
+  if (cfg) {
+    for (const f of cfg.misc ?? []) {
+      if (f.type === 'boolean' && !out.misc.some((m) => m.key === f.key)) {
+        out.misc.push({ key: f.key, value: '', label: f.label, display: miscDisplay('', true) });
+      }
+    }
+  }
   return out;
 }

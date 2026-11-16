@@ -109,6 +109,7 @@ export function ManualEntryForm() {
               fld.type === 'boolean' ? (
                 <label key={`${fld.key}-${i}`} style={{ fontSize: 12 }}>
                   <input type="checkbox" checked={(f.dyn[fld.key] ?? '') === 'true'} onChange={(e) => f.setDyn({ ...f.dyn, [fld.key]: e.target.checked ? 'true' : 'false' })} /> {fld.label}
+                  {(f.dyn[fld.key] ?? '') === '' ? ' —' : ''}
                 </label>
               ) : (
                 <label key={`${fld.key}-${i}`} style={{ fontSize: 12, minWidth: 130, flex: 1 }}>{fld.label} ({fld.key})

@@ -57,7 +57,9 @@ export function ScoreDetail({ item, config, trackCounts }: { item?: FullScore; c
               {showCombo ? `${s.maxCombo}x Combo` : null}
             </div>
           )}
-          {visible.misc.length > 0 && <div className="muted">({visible.misc.map((m) => m.label).join(', ')})</div>}
+          {visible.misc.length > 0 && (
+            <div className="muted">({visible.misc.map((m) => `${m.label}: ${m.display}`).join(', ')})</div>
+          )}
         </div>
       </div>
       {showJudgments && (

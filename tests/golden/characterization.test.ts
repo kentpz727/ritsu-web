@@ -118,7 +118,7 @@ describe('golden characterization: detail visibility', () => {
     expect(filterDetailsByConfig(CONFIG, details)).toEqual(golden.details.withConfig);
   });
 
-  it('without a config: keeps all keys but still drops false misc values', () => {
+  it('without a config: keeps all keys including false misc values', () => {
     expect(filterDetailsByConfig(null, details)).toEqual(golden.details.withoutConfig);
   });
 });

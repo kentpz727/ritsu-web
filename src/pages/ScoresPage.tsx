@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScoreListItem, useConfigMap, useFullScores, initials } from '../components/scores.tsx';
+import { ScoreListItem, useConfigMap, useFullScores } from '../components/scores.tsx';
 import { ScoreDetail } from '../components/detail.tsx';
+import { initials } from '../lib/format.ts';
 import type { ScoreSort } from '../lib/calc/dates.ts';
 
 export default function ScoresPage() {

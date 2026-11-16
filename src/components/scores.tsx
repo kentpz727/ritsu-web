@@ -27,10 +27,6 @@ export function useFullScores(): FullScore[] | undefined {
   }, []);
 }
 
-export function initials(title: string): string {
-  return title.split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-}
-
 export function useConfigMap(): Map<number, GameConfigData> | undefined {
   return useLiveQuery(async () => {
     const configs = await listConfigs();

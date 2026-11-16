@@ -49,6 +49,20 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
 
+  cycles:
+    name: Circular dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # P-11: madge runs from a pinned npx cache because v8 peers TypeScript <=5
+      # and this project builds on TypeScript 6.
+      - run: npm run check:cycles
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest

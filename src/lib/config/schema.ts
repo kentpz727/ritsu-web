@@ -6,7 +6,7 @@
 // weights, thresholds) are clamped and reported as warnings, so hand-authored
 // configs still load while OCR/canvas code never receives bad geometry.
 import { z } from 'zod';
-import type { ConfigField, GameConfigData, OcrRect } from './types.ts';
+import type { ConfigField, GameConfigData, OcrRect } from './model.ts';
 
 export interface ConfigIssue {
   /** Dotted path, e.g. `judgments[0].weight`; `$` means the config root. */

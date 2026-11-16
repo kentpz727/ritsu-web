@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check:cycles": "npx --yes madge@8.0.0 --circular --extensions ts,tsx src"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

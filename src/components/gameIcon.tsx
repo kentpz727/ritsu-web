@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db/dexie.ts';
-import { initials } from './scores.tsx';
+import { initials } from '../lib/format.ts';
 
 /** Object URL for a game's logo blob (null when the game has none). */
 export function useGameIconUrl(configId: number | undefined): string | null {

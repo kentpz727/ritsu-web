@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, listConfigs, saveFullScore } from '../lib/db/dexie.ts';
 import { loadImage, readConfigBoxes, getMatchCandidates, type BenchField, type BenchGeneric } from '../lib/ocr/bench.ts';
 import { parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
+import { errorMessage, logError } from '../lib/errors.ts';
 import { subscribePastedFiles } from '../lib/pasteBus.ts';
 import { FileButton } from '../components/FileButton.tsx';
 
@@ -115,7 +116,8 @@ export default function ImportPage() {
     try {
       cfg = parseGameConfig(row.configData);
     } catch (e) {
-      setJobs([{ id: 'bad', name: '-', status: `Bad config: ${(e as Error).message}`, results: [], saved: false }]);
+      logError('import config parse', e, { configId });
+      setJobs([{ id: 'bad', name: '-', status: `Bad config: ${errorMessage(e)}`, results: [], saved: false }]);
       return;
     }
     const cid = Number(configId);
@@ -177,7 +179,8 @@ export default function ImportPage() {
           saved: true,
         });
       } catch (e) {
-        patchJob(id, { status: `error: ${(e as Error).message}`, saved: false });
+        logError('ocr import', e, { file: f.name, configId: cid });
+        patchJob(id, { status: `error: ${errorMessage(e)}`, saved: false });
       }
     }
   }

@@ -3,6 +3,7 @@ import { db, listConfigs, type FullScore } from '../lib/db/dexie.ts';
 import { timeAgo, formatPlayTime } from '../lib/calc/dates.ts';
 import { GameIcon } from './gameIcon.tsx';
 import { hasSlot, isAccuracyEnabled, isRankEnabled, parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
+import { logError } from '../lib/errors.ts';
 
 export function useFullScores(): FullScore[] | undefined {
   return useLiveQuery(async () => {
@@ -37,8 +38,8 @@ export function useConfigMap(): Map<number, GameConfigData> | undefined {
     for (const c of configs) {
       try {
         if (c.id != null) map.set(c.id, parseGameConfig(c.configData));
-      } catch {
-        /* skip corrupt configs */
+      } catch (e) {
+        logError('config parse skipped', e, { configId: c.id, gameName: c.gameName });
       }
     }
     return map;

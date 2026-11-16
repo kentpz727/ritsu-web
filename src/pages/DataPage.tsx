@@ -8,6 +8,7 @@ import { monthKey, monthLabel } from '../lib/calc/dates.ts';
 import { hasSlot, isAccuracyEnabled, isRankEnabled } from '../lib/config/types.ts';
 import { rankingValue } from '../lib/calc/scoring.ts';
 import { clearAllData, downloadFile, exportToCsv, exportToJson, importFromJson } from '../lib/db/dexie.ts';
+import { errorMessage, logError } from '../lib/errors.ts';
 
 type PeriodMode = 'day' | 'week' | 'month' | 'year' | 'range';
 
@@ -240,7 +241,8 @@ export default function DataPage() {
           (r.skippedGames.length > 0 ? ` (skipped unknown games: ${r.skippedGames.join(', ')}) — import their configs first.` : ''),
       );
     } catch (e) {
-      setMsg(`Import failed: ${(e as Error).message}`);
+      logError('json import', e, { fileName: file.name });
+      setMsg(`Import failed: ${errorMessage(e)}`);
     }
   }
 

@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { listConfigs, listDeletedConfigs, setGameIcon, softDeleteConfig, restoreConfig, countScoresForConfig, upsertConfig, downloadFile, type GameConfigRow } from '../lib/db/dexie.ts';
 import { formatConfigIssues, validateGameConfigJson, validateGameConfigObject } from '../lib/config/types.ts';
 import { canConfirmDelete, configDeleteImpact } from '../lib/config/deleteImpact.ts';
+import { errorMessage, logError } from '../lib/errors.ts';
 import { GameIcon, fileToIconBlob } from '../components/gameIcon.tsx';
 import { FileButton } from '../components/FileButton.tsx';
 
@@ -93,7 +94,8 @@ export default function ConfigsPage() {
       const notes = result.warnings.map((w) => `${w.path}: ${w.message}`);
       setMsg(`Imported ${clean.gameName}` + (notes.length > 0 ? `\n${notes.join('\n')}` : ''));
     } catch (e) {
-      setMsg(`Import failed: ${(e as Error).message}`);
+      logError('config import', e);
+      setMsg(`Import failed: ${errorMessage(e)}`);
     }
   }
 
@@ -124,7 +126,8 @@ export default function ConfigsPage() {
                   await setGameIcon(c.id, await fileToIconBlob(f));
                   setMsg(`Logo set for ${c.gameName}.`);
                 } catch (err) {
-                  setMsg(`Logo failed: ${(err as Error).message}`);
+                  logError('config logo', err, { configId: c.id });
+                  setMsg(`Logo failed: ${errorMessage(err)}`);
                 }
               }}
             >

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { filesFromClipboard, publishPastedFiles } from '../lib/pasteBus.ts';
+import { RouteErrorBoundary } from './ErrorBoundary.tsx';
 
 export function TopBar() {
   const nav = useNavigate();
@@ -72,7 +73,9 @@ export function Layout() {
       </a>
       <TopBar />
       <main className="layout" id="main-content" tabIndex={-1}>
-        <Outlet />
+        <RouteErrorBoundary>
+          <Outlet />
+        </RouteErrorBoundary>
       </main>
       <BottomNav />
     </React.Fragment>

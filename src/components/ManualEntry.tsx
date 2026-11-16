@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { listConfigs, saveFullScore } from '../lib/db/dexie.ts';
 import { parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
+import { errorMessage, logError } from '../lib/errors.ts';
+import { useToast } from './toast.ts';
 import { useScoreForm } from './useScoreForm.ts';
 
 const errStyle = { color: '#ff9d9d', fontSize: 11 } as const;
@@ -9,18 +11,21 @@ const errStyle = { color: '#ff9d9d', fontSize: 11 } as const;
 /** Manual score entry (lives in the Debug section): fix-up for screenshots that failed auto-import. */
 export function ManualEntryForm() {
   const configs = useLiveQuery(() => listConfigs(), []);
+  const toast = useToast();
   const [configId, setConfigId] = useState<number | ''>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const selectedCfg: GameConfigData | null = useMemo(() => {
+  const selected = useMemo((): { config: GameConfigData | null; error: string | null } => {
     const row = (configs ?? []).find((c) => c.id === configId);
-    if (!row) return null;
+    if (!row) return { config: null, error: null };
     try {
-      return parseGameConfig(row.configData);
-    } catch {
-      return null;
+      return { config: parseGameConfig(row.configData), error: null };
+    } catch (e) {
+      logError('manual config parse', e, { configId });
+      return { config: null, error: errorMessage(e) };
     }
   }, [configs, configId]);
+  const selectedCfg = selected.config;
 
   const f = useScoreForm(selectedCfg);
 
@@ -35,10 +40,18 @@ export function ManualEntryForm() {
     const { errors: errs, collected } = f.collect();
     setErrors(errs);
     if (!collected) return;
-    const saved = await saveFullScore({ configId: Number(configId), ...collected });
-    f.reset();
-    setErrors({});
-    alert(saved.duplicate ? 'This play is already in the library — duplicate skipped.' : 'Score saved to IndexedDB.');
+    try {
+      const saved = await saveFullScore({ configId: Number(configId), ...collected });
+      f.reset();
+      setErrors({});
+      toast(
+        saved.duplicate ? 'This play is already in the library — duplicate skipped.' : 'Score saved to IndexedDB.',
+        saved.duplicate ? 'info' : 'success',
+      );
+    } catch (e) {
+      logError('manual save', e, { configId });
+      toast(`Could not save score: ${errorMessage(e)}`, 'error');
+    }
   }
 
   return (
@@ -50,6 +63,7 @@ export function ManualEntryForm() {
           {(configs ?? []).map((c) => <option key={c.id} value={c.id}>{c.gameName} (v{c.configVersion})</option>)}
         </select>
       </div>
+      {selected.error && <p style={errStyle}>Could not read this game config: {selected.error}</p>}
       <div className="row">
         <label style={{ fontSize: 12, minWidth: 150, flex: 1 }}>playedAt
           <input className="input" type="datetime-local" value={f.playedAt} onChange={(e) => f.setPlayedAt(e.target.value)} />

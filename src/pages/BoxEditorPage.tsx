@@ -4,7 +4,9 @@ import { db } from '../lib/db/dexie.ts';
 import { isMissField } from '../lib/calc/scoring.ts';
 import { adjustRectWithKey } from '../lib/config/rectKeyboard.ts';
 import { debounce } from '../lib/debounce.ts';
+import { errorMessage, logError } from '../lib/errors.ts';
 import { FileButton } from '../components/FileButton.tsx';
+import { useToast } from '../components/toast.ts';
 import {
   GENERIC_SLOTS,
   PRESET_FIELDS,
@@ -62,6 +64,7 @@ function boxesFor(
 
 export default function BoxEditorPage() {
   const { configId } = useParams();
+  const toast = useToast();
   const [cfg, setCfg] = useState<GameConfigData | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [sel, setSel] = useState<string>('scoreRect');
@@ -91,14 +94,19 @@ export default function BoxEditorPage() {
         setMsg(`Not saved:\n${formatConfigIssues(validated.errors)}`);
         return;
       }
-      const row = await db.game_configs.get(Number(configId));
-      if (!row) return;
-      await db.game_configs.update(row.id!, { configData: JSON.stringify(validated.config) });
-      // A newer draft may have arrived while this write was in flight.
-      if (pendingCfg.current == null) setCfg(validated.config);
-      setMsg(validated.warnings.length > 0 ? `Saved with fixes:\n${formatConfigIssues(validated.warnings)}` : '');
+      try {
+        const row = await db.game_configs.get(Number(configId));
+        if (!row) return;
+        await db.game_configs.update(row.id!, { configData: JSON.stringify(validated.config) });
+        // A newer draft may have arrived while this write was in flight.
+        if (pendingCfg.current == null) setCfg(validated.config);
+        setMsg(validated.warnings.length > 0 ? `Saved with fixes:\n${formatConfigIssues(validated.warnings)}` : '');
+      } catch (e) {
+        logError('config save', e, { configId });
+        toast(`Could not save config: ${errorMessage(e)}`, 'error');
+      }
     },
-    [configId],
+    [configId, toast],
   );
 
   const saveDraft = useMemo(
@@ -124,7 +132,8 @@ export default function BoxEditorPage() {
         setMsg('');
       } catch (e) {
         setCfg(null);
-        setMsg(`Config rejected:\n${(e as Error).message}`);
+        setMsg(`Config rejected:\n${errorMessage(e)}`);
+        logError('config load', e, { configId });
       }
     });
   }, [configId]);
@@ -153,7 +162,10 @@ export default function BoxEditorPage() {
       URL.revokeObjectURL(url);
       setImg(el);
     };
-    el.onerror = () => URL.revokeObjectURL(url);
+    el.onerror = () => {
+      URL.revokeObjectURL(url);
+      toast('Could not decode that image. Try another screenshot.', 'error');
+    };
     el.src = url;
   }
 
@@ -358,7 +370,7 @@ export default function BoxEditorPage() {
       const list = [...(next[listKey] ?? [])];
       const target = list[Number(idx)];
       if (!target) {
-        alert('That field no longer exists — it may have been deleted. Reselect a field and try again.');
+        toast('That field no longer exists — it may have been deleted. Reselect a field and try again.', 'error');
         setSel('scoreRect');
         return;
       }
@@ -394,7 +406,7 @@ export default function BoxEditorPage() {
       const taken = allKeys(cfg);
       taken.delete(current.key);
       if (taken.has(clean)) {
-        alert(`Key "${clean}" is already used. Keys must be unique.`);
+        toast(`Key "${clean}" is already used. Keys must be unique.`, 'error');
         return;
       }
       patch = { ...patch, key: clean };
@@ -438,7 +450,7 @@ export default function BoxEditorPage() {
           ...(addCat === 'Judgment' ? { weight: 1.0 } : {}),
         };
     if (!base.key) {
-      alert('Give the new field a key.');
+      toast('Give the new field a key.', 'error');
       return;
     }
     const lk = listKeyOf(cat);

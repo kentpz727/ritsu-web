@@ -175,6 +175,22 @@ dialog.ritsu::backdrop { background: rgba(0,0,0,.52); }
 .rect-list { font-size: 12px; }
 kbd { background: rgba(0,0,0,.4); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
 
+.toast-stack {
+  position: fixed; right: 16px; bottom: 88px; z-index: 90;
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+}
+.toast {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--card); color: var(--text); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 13px;
+}
+.toast span { flex: 1; }
+.toast-error { border-left-color: #ff8d8d; }
+.toast-success { border-left-color: var(--good); }
+.toast .btn { padding: 2px 8px; font-size: 11px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

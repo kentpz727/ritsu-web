@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { updateFullScore, type FullScore } from '../lib/db/dexie.ts';
 import type { GameConfigData } from '../lib/config/types.ts';
+import { errorMessage, logError } from '../lib/errors.ts';
+import { useToast } from './toast.ts';
 import { useScoreForm } from './useScoreForm.ts';
 
 const errStyle = { color: '#ff9d9d', fontSize: 11 } as const;
@@ -17,6 +19,7 @@ export function EditScoreDialog({
 }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const toast = useToast();
   const f = useScoreForm(config ?? null, {
     songTitle: item.score.songTitle,
     difficultyName: item.score.difficultyName,
@@ -42,6 +45,9 @@ export function EditScoreDialog({
         : item.details.map((d) => ({ key: d.key, value: d.value, category: d.category }));
       await updateFullScore(item.score.id, patch, details);
       onClose();
+    } catch (e) {
+      logError('score update', e, { scoreId: item.score.id });
+      toast(`Could not save changes: ${errorMessage(e)}`, 'error');
     } finally {
       setSaving(false);
     }

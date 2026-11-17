@@ -200,3 +200,6 @@ function pickForm(initial?: ScoreFormInitial): Partial<ScoreFormState> {
   const { playedAt: _p, dyn: _d, ...rest } = initial;
   return rest;
 }
+
+/** Shape consumed by the shared score fields (P-10). */
+export type ScoreFormController = ReturnType<typeof useScoreForm>;

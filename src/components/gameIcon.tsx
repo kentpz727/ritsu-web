@@ -1,14 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../lib/db/dexie.ts';
+import { useScoreSnapshot } from '../lib/db/scoreCache.ts';
 import { initials } from '../lib/format.ts';
 
-/** Object URL for a game's logo blob (null when the game has none). */
-export function useGameIconUrl(configId: number | undefined): string | null {
-  const icon = useLiveQuery(
-    () => db.game_configs.get(configId ?? -1).then((r) => r?.displayIcon ?? null),
-    [configId],
-  );
+/** Object URL for a blob, revoked when it changes or unmounts. */
+function useBlobUrl(icon: Blob | null): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!icon) {
@@ -22,19 +17,18 @@ export function useGameIconUrl(configId: number | undefined): string | null {
   return url;
 }
 
-/** Game logo thumbnail with initials fallback (same 73px card look). */
-export function GameIcon({
-  configId,
+function IconView({
+  icon,
   label,
-  size = 73,
+  size,
   fallback,
 }: {
-  configId: number;
+  icon: Blob | null;
   label: string;
-  size?: number;
+  size: number;
   fallback?: ReactNode;
 }) {
-  const url = useGameIconUrl(configId);
+  const url = useBlobUrl(icon);
   if (url) {
     return (
       <img
@@ -51,6 +45,44 @@ export function GameIcon({
       {fallback ?? initials(label)}
     </span>
   );
+}
+
+/**
+ * Game logo thumbnail with initials fallback (same 73px card look).
+ * Pass `icon` when the caller already has the config row (ConfigsPage); otherwise
+ * the shared score snapshot supplies it (P-08) — no per-card IndexedDB query.
+ */
+export function GameIcon({
+  configId,
+  label,
+  size = 73,
+  fallback,
+  icon,
+}: {
+  configId: number;
+  label: string;
+  size?: number;
+  fallback?: ReactNode;
+  icon?: Blob | null;
+}) {
+  if (icon !== undefined) return <IconView icon={icon} label={label} size={size} fallback={fallback} />;
+  return <CachedGameIcon configId={configId} label={label} size={size} fallback={fallback} />;
+}
+
+function CachedGameIcon({
+  configId,
+  label,
+  size,
+  fallback,
+}: {
+  configId: number;
+  label: string;
+  size: number;
+  fallback?: ReactNode;
+}) {
+  const snapshot = useScoreSnapshot();
+  const icon = snapshot?.configs.find((config) => config.id === configId)?.displayIcon ?? null;
+  return <IconView icon={icon} label={label} size={size} fallback={fallback} />;
 }
 
 /** Downscale an uploaded image to a small PNG blob for IndexedDB storage. */

@@ -112,7 +112,7 @@ export default function ConfigsPage() {
       {(configs ?? []).map((c) => (
         <div className="card" key={c.id}>
           <div className="row">
-            {c.id != null && <GameIcon configId={c.id} label={c.gameName} size={60} />}
+            {c.id != null && <GameIcon configId={c.id} label={c.gameName} size={60} icon={c.displayIcon ?? null} />}
             <strong>{c.gameName}</strong>
             <span className="muted">v{c.configVersion}</span>
             <span style={{ flex: 1 }} />

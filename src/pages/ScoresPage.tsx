@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScoreListItem, useConfigMap, useFullScores } from '../components/scores.tsx';
 import { ScoreDetail } from '../components/detail.tsx';
 import { initials } from '../lib/format.ts';
 import type { ScoreSort } from '../lib/calc/dates.ts';
+import { SCORE_PAGE_SIZE, clampPage, pageCount, pageRange, pageSlice } from '../lib/pagination.ts';
 
 export default function ScoresPage() {
   const all = useFullScores();
@@ -14,6 +15,10 @@ export default function ScoresPage() {
   const [asc, setAsc] = useState(false);
   const [game, setGame] = useState<string>('All');
   const [selectedId, setSelectedId] = useState<number | undefined>();
+  const [page, setPage] = useState(0);
+
+  // A filter change makes the old page index meaningless.
+  useEffect(() => setPage(0), [q, sort, asc, game]);
 
   const games = useMemo(() => ['All', ...new Set((all ?? []).map((f) => f.gameName))], [all]);
   const filtered = useMemo(() => {
@@ -35,7 +40,11 @@ export default function ScoresPage() {
     return list;
   }, [all, q, sort, asc, game]);
 
-  const selected = filtered.find((f) => f.score.id === selectedId) ?? filtered[0];
+  // P-08: render at most one page of rows; the shared snapshot holds the rest.
+  const visible = useMemo(() => pageSlice(filtered, page), [filtered, page]);
+  const currentPage = clampPage(page, filtered.length);
+  const [rangeFrom, rangeTo] = pageRange(currentPage, filtered.length);
+  const selected = visible.find((f) => f.score.id === selectedId) ?? visible[0] ?? filtered[0];
 
   // Android parity (getTrackCountForSong/Chart): plays of the song across all
   // difficulties, and plays of this exact chart — not a hardcoded 1.
@@ -75,9 +84,26 @@ export default function ScoresPage() {
             </button>
           ))}
         </div>
-        {filtered.map((f) => (
+        {visible.map((f) => (
           <ScoreListItem key={f.score.id} item={f} selected={selected?.score.id === f.score.id} onSelect={() => setSelectedId(f.score.id)} config={configMap?.get(f.score.configId)} />
         ))}
+        {filtered.length > SCORE_PAGE_SIZE && (
+          <div className="row" style={{ marginTop: 12, alignItems: 'center' }}>
+            <button className="btn" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 0}>
+              Previous
+            </button>
+            <span className="muted" aria-live="polite">
+              Page {currentPage + 1} of {pageCount(filtered.length)} · {rangeFrom}–{rangeTo} of {filtered.length}
+            </span>
+            <button
+              className="btn"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage >= pageCount(filtered.length) - 1}
+            >
+              Next
+            </button>
+          </div>
+        )}
         {filtered.length === 0 && <p className="muted">No scores yet — use the camera button to import.</p>}
       </section>
       <div className="divider" />

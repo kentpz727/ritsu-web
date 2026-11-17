@@ -117,21 +117,31 @@ export function OcrBench() {
 /** Database inspector: raw access to everything stored on the device. */
 export function DbViewer() {
   const configs = useLiveQuery(() => listConfigs(), []);
-  const scores = useLiveQuery(() => db.generic_scores.orderBy('playTimestamp').reverse().toArray(), []);
-  const details = useLiveQuery(() => db.score_details.toArray(), []);
+  // P-08: counts come from indexed count(), and the tables render bounded rows
+  // instead of materializing every score/detail on mount. Full exports still
+  // read everything, but only when the user asks for them.
+  const counts = useLiveQuery(
+    async () => ({
+      scores: await db.generic_scores.count(),
+      details: await db.score_details.count(),
+    }),
+    [],
+  );
+  const scores = useLiveQuery(() => db.generic_scores.orderBy('playTimestamp').reverse().limit(100).toArray(), []);
+  const details = useLiveQuery(() => db.score_details.limit(200).toArray(), []);
   const [tab, setTab] = useState<'configs' | 'scores' | 'details'>('configs');
   const [msg, setMsg] = useState('');
 
   const gameOf = (configId: number) => configs?.find((c) => c.id === configId)?.gameName ?? `#${configId}`;
-  const shownScores = (scores ?? []).slice(0, 100);
-  const shownDetails = (details ?? []).slice(0, 200);
+  const shownScores = scores ?? [];
+  const shownDetails = details ?? [];
 
   return (
     <div className="card">
       <h2>Database</h2>
       <p className="muted">
         User database, stored in this browser: game_configs ({configs?.length ?? 0}) ·
-        generic_scores ({scores?.length ?? 0}) · score_details ({details?.length ?? 0}).
+        generic_scores ({counts?.scores ?? 0}) · score_details ({counts?.details ?? 0}).
       </p>
       <div className="row" style={{ marginBottom: 8 }}>
         {(['configs', 'scores', 'details'] as const).map((t) => (
@@ -166,13 +176,13 @@ export function DbViewer() {
         )}
         {tab === 'scores' && (
           <>
-            <button className="btn" onClick={() => downloadFile(`ritsu-scores-${Date.now()}.json`, JSON.stringify(scores ?? [], null, 2))}>Export</button>
+            <button className="btn" onClick={async () => downloadFile(`ritsu-scores-${Date.now()}.json`, JSON.stringify(await db.generic_scores.toArray(), null, 2))}>Export</button>
             <button className="btn" onClick={async () => { if (confirm('Delete ALL scores and details?')) { await clearAllData(); setMsg('Scores cleared.'); } }}>Clear</button>
           </>
         )}
         {tab === 'details' && (
           <>
-            <button className="btn" onClick={() => downloadFile(`ritsu-details-${Date.now()}.json`, JSON.stringify(details ?? [], null, 2))}>Export</button>
+            <button className="btn" onClick={async () => downloadFile(`ritsu-details-${Date.now()}.json`, JSON.stringify(await db.score_details.toArray(), null, 2))}>Export</button>
             <button className="btn" onClick={async () => { if (confirm('Delete ALL score details? Scores will keep only generic columns.')) { await db.score_details.clear(); setMsg('Details cleared.'); } }}>Clear</button>
           </>
         )}
@@ -214,7 +224,7 @@ export function DbViewer() {
               ))}
             </tbody>
           </table>
-          {(scores?.length ?? 0) > 100 && <p className="muted">Showing first 100 of {scores?.length}.</p>}
+          {(counts?.scores ?? 0) > 100 && <p className="muted">Showing first 100 of {counts?.scores}.</p>}
         </>
       )}
       {tab === 'details' && (
@@ -234,7 +244,7 @@ export function DbViewer() {
               ))}
             </tbody>
           </table>
-          {(details?.length ?? 0) > 200 && <p className="muted">Showing first 200 of {details?.length}.</p>}
+          {(counts?.details ?? 0) > 200 && <p className="muted">Showing first 200 of {counts?.details}.</p>}
         </>
       )}
     </div>

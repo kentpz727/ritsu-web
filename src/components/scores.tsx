@@ -1,45 +1,15 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, listConfigs, type FullScore } from '../lib/db/dexie.ts';
+import { useScoreSnapshot } from '../lib/db/scoreCache.ts';
+import type { FullScore } from '../lib/db/dexie.ts';
 import { timeAgo, formatPlayTime } from '../lib/calc/dates.ts';
 import { GameIcon } from './gameIcon.tsx';
-import { hasSlot, isAccuracyEnabled, isRankEnabled, parseGameConfig, type GameConfigData } from '../lib/config/types.ts';
-import { logError } from '../lib/errors.ts';
+import { hasSlot, isAccuracyEnabled, isRankEnabled, type GameConfigData } from '../lib/config/types.ts';
 
 export function useFullScores(): FullScore[] | undefined {
-  return useLiveQuery(async () => {
-    const [scores, details, configs] = await Promise.all([
-      db.generic_scores.orderBy('playTimestamp').reverse().toArray(),
-      db.score_details.toArray(),
-      listConfigs(),
-    ]);
-    const gameById = new Map(configs.map((c) => [c.id, c.gameName]));
-    const byScore = new Map<number, typeof details>();
-    for (const d of details) {
-      const arr = byScore.get(d.scoreId) ?? [];
-      arr.push(d);
-      byScore.set(d.scoreId, arr);
-    }
-    return scores.map((score) => ({
-      score,
-      details: byScore.get(score.id!) ?? [],
-      gameName: gameById.get(score.configId) ?? 'Unknown',
-    }));
-  }, []);
+  return useScoreSnapshot()?.scores;
 }
 
 export function useConfigMap(): Map<number, GameConfigData> | undefined {
-  return useLiveQuery(async () => {
-    const configs = await listConfigs();
-    const map = new Map<number, GameConfigData>();
-    for (const c of configs) {
-      try {
-        if (c.id != null) map.set(c.id, parseGameConfig(c.configData));
-      } catch (e) {
-        logError('config parse skipped', e, { configId: c.id, gameName: c.gameName });
-      }
-    }
-    return map;
-  }, []);
+  return useScoreSnapshot()?.configMap;
 }
 
 export function ScoreListItem({

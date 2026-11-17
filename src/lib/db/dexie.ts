@@ -174,24 +174,43 @@ export async function saveFullScore(
   });
 }
 
+/** One consistent read of every score, detail, and active config (P-08). */
+export interface ScoreSnapshot {
+  scores: FullScore[];
+  configs: GameConfigRow[];
+}
+
+/**
+ * Load the score tables once, inside a single read transaction, so consumers
+ * share one snapshot instead of each scanning three tables independently.
+ */
+export async function readScoreSnapshot(): Promise<ScoreSnapshot> {
+  return db.transaction('r', db.game_configs, db.generic_scores, db.score_details, async () => {
+    const [scores, details, configs] = await Promise.all([
+      db.generic_scores.orderBy('playTimestamp').reverse().toArray(),
+      db.score_details.toArray(),
+      listConfigs(),
+    ]);
+    const gameById = new Map(configs.map((c) => [c.id, c.gameName]));
+    const detailsByScore = new Map<number, ScoreDetailRow[]>();
+    for (const d of details) {
+      const arr = detailsByScore.get(d.scoreId) ?? [];
+      arr.push(d);
+      detailsByScore.set(d.scoreId, arr);
+    }
+    return {
+      scores: scores.map((score) => ({
+        score,
+        details: detailsByScore.get(score.id!) ?? [],
+        gameName: gameById.get(score.configId) ?? 'Unknown',
+      })),
+      configs,
+    };
+  });
+}
+
 export async function fullScores(): Promise<FullScore[]> {
-  const [scores, details, configs] = await Promise.all([
-    db.generic_scores.orderBy('playTimestamp').reverse().toArray(),
-    db.score_details.toArray(),
-    listConfigs(),
-  ]);
-  const gameById = new Map(configs.map((c) => [c.id, c.gameName]));
-  const detailsByScore = new Map<number, ScoreDetailRow[]>();
-  for (const d of details) {
-    const arr = detailsByScore.get(d.scoreId) ?? [];
-    arr.push(d);
-    detailsByScore.set(d.scoreId, arr);
-  }
-  return scores.map((score) => ({
-    score,
-    details: detailsByScore.get(score.id!) ?? [],
-    gameName: gameById.get(score.configId) ?? 'Unknown',
-  }));
+  return (await readScoreSnapshot()).scores;
 }
 
 export async function deleteScore(id: number): Promise<void> {

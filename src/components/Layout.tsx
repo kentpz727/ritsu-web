@@ -74,7 +74,9 @@ export function Layout() {
       <TopBar />
       <main className="layout" id="main-content" tabIndex={-1}>
         <RouteErrorBoundary>
-          <Outlet />
+          <React.Suspense fallback={<p className="muted" role="status">Loading…</p>}>
+            <Outlet />
+          </React.Suspense>
         </RouteErrorBoundary>
       </main>
       <BottomNav />

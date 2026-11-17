@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check:cycles": "npx --yes madge@8.0.0 --circular --extensions ts,tsx src",
-    "check:duplication": "npx --yes jscpd@5.4.3 src --threshold 1"
+    "check:duplication": "npx --yes jscpd@5.4.3 src --threshold 1",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

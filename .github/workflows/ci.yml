@@ -67,6 +67,21 @@ jobs:
         run: test "$(wc -l < src/pages/BoxEditorPage.tsx)" -le 250
       - run: npm run check:duplication
 
+  bundle:
+    name: Bundle budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # P-07: guard the achieved entry floor (see scripts/check-bundle.mjs);
+      # OCR assets must stay lazy.
+      - run: npm run check:bundle
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest

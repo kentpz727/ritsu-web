@@ -68,7 +68,3 @@ export function rankingValue(
   if (sortMode === 'COMBO') return notes * score.maxCombo;
   return notes * score.totalScore;
 }
-
-export function booleanLabels(details: Array<{ key: string; value: string }>): string[] {
-  return details.filter((d) => d.value === 'true').map((d) => d.key);
-}

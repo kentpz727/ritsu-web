@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { booleanLabels, isMissField, totalNotes } from '../../src/lib/calc/scoring.ts';
+import { isMissField, totalNotes } from '../../src/lib/calc/scoring.ts';
 import type { ConfigField, GameConfigData } from '../../src/lib/config/types.ts';
 import {
   formatFull,
@@ -13,16 +13,6 @@ import {
 const ts = new Date(2026, 0, 2, 3, 4, 0).getTime();
 
 describe('scoring helpers not exercised by the golden config', () => {
-  it('booleanLabels keeps only details whose value is exactly "true"', () => {
-    expect(
-      booleanLabels([
-        { key: 'fullCombo', value: 'true' },
-        { key: 'clear', value: 'false' },
-        { key: 'note', value: 'true ' },
-      ]),
-    ).toEqual(['fullCombo']);
-  });
-
   it('totalNotes ignores counts that are not configured', () => {
     const cfg: GameConfigData = {
       gameName: 'G',

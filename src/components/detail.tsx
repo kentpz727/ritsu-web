@@ -102,39 +102,6 @@ export function ScoreDetail({ item, config, trackCounts }: { item?: FullScore; c
   );
 }
 
-/** Minimal SVG stand-in for LineGraph / MultiLineGraph. */
-export function LineChart({ points, label }: { points: number[]; label: string }) {
-  // Drop non-finite values: one NaN token invalidates a whole polyline.
-  const clean = points.filter((p) => Number.isFinite(p));
-  const w = 600;
-  const h = 140;
-  const max = Math.max(...clean, 1);
-  const min = Math.min(...clean, 0);
-  const path = clean
-    .map((p, i) => `${(i / Math.max(clean.length - 1, 1)) * w},${h - ((p - min) / Math.max(max - min, 1)) * (h - 20) - 10}`)
-    .join(' ');
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <svg className="line-chart" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label}>
-        {[0.25, 0.5, 0.75].map((f) => (
-          <line key={f} x1={0} x2={w} y1={h * f} y2={h * f} stroke="rgba(255,255,255,.2)" />
-        ))}
-        {clean.length > 1 && <polyline points={path} fill="none" stroke="#fff" strokeWidth={2} />}
-        {clean.map((p, i) => (
-          <circle
-            key={i}
-            cx={(i / Math.max(clean.length - 1, 1)) * w}
-            cy={h - ((p - min) / Math.max(max - min, 1)) * (h - 20) - 10}
-            r={3}
-            fill="#5df3ff"
-          />
-        ))}
-      </svg>
-      <div className="muted" style={{ textAlign: 'center' }}>{label}</div>
-    </div>
-  );
-}
-
 export function BarChart({ values, labels, caption = 'Weeks' }: { values: number[]; labels: string[]; caption?: string }) {
   const max = Math.max(...values, 1);
   return (

@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use annotated tags.
 
+## [Unreleased]
+
+### Changed
+
+- Merged the `origin/main` Vercel deployment fixes: esbuild CSS minification, `allowScripts` for
+  esbuild/protobufjs/tesseract.js, and a `detect-libc` v1 override. No application behavior changed.
+
 ## [0.1.0] - 2026-11-18
 
 First documented release. This release closes the approved maintenance plan for the prototype and

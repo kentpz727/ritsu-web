@@ -45,10 +45,12 @@ Baseline (Phase 0): build passed; no test or lint script; 0 tests; TS6133 error;
 9 outdated packages; 2.55% duplicated lines; 1 known cycle; entry 474.00 kB / 148.59 kB gzip;
 `dist/index.html` tracked; no tag.
 
-Final code state (before Phase 4 docs): 171 tests in 25 files; 88.28% line coverage; typecheck
-clean; lint 0 errors / 9 warnings; format clean; 0 cycles; 0.11% duplicated lines; entry 266.36 kB
-/ 84.73 kB gzip; `dist/` untracked; tag `v0.1.0`; 14 advisories (8 high / 6 moderate, external
-regression); 2 outdated packages.
+Final code state (after the `origin/main` merge at `2169eabf`): 171 tests in 25 files; 88.28% line
+coverage; typecheck clean; lint 0 errors / 9 warnings; format clean; 0 cycles; 0.20% duplicated
+lines (2 clones); entry 266.36 kB / 84.73 kB gzip; `dist/` untracked; tag `v0.1.0`; 14 advisories
+(8 high / 6 moderate, external regression); 2 outdated packages. The merge integrates the remote
+Vercel fixes (esbuild CSS minification, `allowScripts`, `detect-libc` override) without changing
+the maintenance behavior.
 
 ---
 
@@ -534,3 +536,5 @@ dependency was added for them.
 | `52f8f150` | P-17    | Remove dead code/assets/dependency                 |
 | `02bd87de` | P-19    | Docs, version 0.1.0, untrack `dist/`, tag `v0.1.0` |
 | `8addd02e` | P-06    | Patch refresh of eslint-plugin-react-refresh       |
+| `862ccc03` | —       | Phase 4 records: log, validation, addendum         |
+| `2169eabf` | —       | Merge `origin/main` deployment fixes               |

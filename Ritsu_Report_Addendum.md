@@ -29,7 +29,7 @@ Phase 0 evidence. Both are accurate for their dates; the report should not mix t
 | Circular dependencies     | 1 (`scores.tsx` ↔ `gameIcon.tsx`) | 2 before P-11                            | P-03 introduced a `types.ts` ↔ `schema.ts` cycle, which P-11 also removed.                                              |
 | Tests                     | 0                                 | 98 after the P-04 commits                | 31 characterization + 67 unit tests; the suite grew to 171 by the end.                                                  |
 | High advisories           | 3                                 | 0 after P-06, then 8 at final validation | The advisory database changed after the P-06 commit; see §3.1.                                                          |
-| Duplicated lines          | 2.55% (146 lines)                 | 0.11% after P-10                         | jscpd still reports one 7-line pre-existing clone in `bench.ts`.                                                        |
+| Duplicated lines          | 2.55% (146 lines)                 | 0.20% final (0.11% at the P-10 check)    | jscpd now reports two small clones: 7 lines in `bench.ts` and 6 lines between `ManualEntry.tsx` and `debug.tsx`.        |
 
 ## 3. New findings and residual risks
 
@@ -86,7 +86,8 @@ is captured by a unit test; it was not “fixed” because it is outside P-11’
 
 ### 3.5 jscpd does not detect the former JSX clone
 
-jscpd reports only 0.11% duplicated lines and did not flag the 45-line manual/edit form block.
+jscpd reports only 0.20% duplicated lines (two small clones: 7 lines in `bench.ts` and 6 lines
+between `ManualEntry.tsx` and `debug.tsx`) and did not flag the 45-line manual/edit form block.
 P-10’s evidence for that part is the direct identical-line measurement (45→5), not jscpd. Do not
 treat the jscpd number as proof that JSX duplication is absent.
 
@@ -147,6 +148,26 @@ The A-04 count and coverage targets are still met.
 
 Config `formula` is kept for Android compatibility and round-tripping but is not evaluated by the
 web app. `DATA_FORMAT.md` says so. A future feature that uses it needs validation and tests first.
+
+### 3.14 `origin/main` was merged after the Phase 4 validation
+
+The remote `main` had four commits made after the maintenance branch was cut:
+
+- `c79a0cc9` switched CSS minification to esbuild for Vercel compatibility.
+- `f4ffab53` pinned `detect-libc` to v1 via a package override.
+- `a67f5f15` removed the vendored `node_modules/detect-libc` files.
+- `b6732e48` added `esbuild` as a devDependency and allowed its install script.
+
+`2169eabf` merges them into the maintenance work. `package.json` keeps the P-06 dependency set
+and adds the remote `esbuild`, `allowScripts`, and `detect-libc` settings; `package-lock.json` was
+regenerated from that combined manifest. `dist/index.html` remains untracked per P-19, and the
+vendored `detect-libc` files stay removed. The generated `node_modules/.package-lock.json` was not
+advanced in this merge; the vendored `node_modules` subset remains the §3.2 hygiene item.
+
+A fresh `npm ci` from the merged lockfile succeeded, and the gates were rerun: typecheck 0, lint
+0 errors/9 warnings, format clean, 171 tests, 88.28% lines, build 266.36 kB / 84.73 kB gzip, bundle
+guard pass, 0 cycles, 0.20% duplication, audit 8 high / 6 moderate (unchanged external advisories).
+No maintenance behavior changed.
 
 ## 4. Follow-up backlog (not approved work)
 

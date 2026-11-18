@@ -1,8 +1,8 @@
 # Ritsu Validation Results
 
-**Branch:** `Test`  
+**Branch:** `main` (merged from `Test`)  
 **Base:** `64c3a235`  
-**Validated code HEAD:** `8addd02e` (Phase 4 documents follow)  
+**Validated code HEAD:** `2169eabf` (merge of `origin/main`); pre-merge maintenance HEAD `8addd02e`  
 **Date:** 2026-11-18  
 **Environment:** Windows, Node.js v24.20.0, npm 11.19.0, Chromium browser for DOM/OCR checks.  
 **Method:** each item was reproduced before the change, validated with the smallest relevant test
@@ -10,9 +10,10 @@ plus the full suite, and checked through a production build where a browser beha
 No metric below is estimated; all come from commands or recorded browser checks.
 
 > **Install note:** the audit, outdated, coverage, and build numbers were taken with the
-> npm-installed tree for `8addd02e` (React 19.3.1, eslint-plugin-react-refresh 0.5.8). The
-> repository still tracks a stale `node_modules` subset; after `git checkout -- node_modules`, a
-> local `npm ls`/`npm outdated` reflects those old tracked files until the next `npm ci`. See the
+> npm-installed tree for `8addd02e` (React 19.3.1, eslint-plugin-react-refresh 0.5.8) and re-checked
+> after the `origin/main` merge with a fresh `npm ci` from the merged lockfile. The repository still
+> tracks a stale `node_modules` subset; after `git checkout -- node_modules`, a local
+> `npm ls`/`npm outdated` reflects those old tracked files until the next `npm ci`. See the
 > addendum §3.2.
 
 ## Final gate results
@@ -26,7 +27,7 @@ No metric below is estimated; all come from commands or recorded browser checks.
 | Lint                    | `npm run lint`                                           | 0 errors, 9 warnings                                               | PASS     |
 | Format                  | `npm run format:check`                                   | all matched files clean                                            | PASS     |
 | Circular imports        | `npm run check:cycles`                                   | 49 files, no circular dependency, exit 0                           | PASS     |
-| Duplication             | `npm run check:duplication`                              | 1 clone, 7 lines, 0.11% (threshold 1%)                             | PASS     |
+| Duplication             | `npm run check:duplication`                              | 2 clones, 13 lines, 0.20% (threshold 1%)                           | PASS     |
 | Build                   | `npm run build`                                          | exit 0; entry 266.36 kB / 84.73 kB gzip                            | PASS     |
 | Bundle budget           | `npm run check:bundle`                                   | 260.12 KiB / 81.86 KiB gzip against 262/83 KiB                     | PASS     |
 | `alert()` removal       | source search                                            | 0 call sites                                                       | PASS     |
@@ -38,6 +39,12 @@ No metric below is estimated; all come from commands or recorded browser checks.
 The audit failure is an upstream advisory-database regression after P-06, not a weakened gate.
 A fresh `npm ci` in the V-19 clone reported the same 14 vulnerabilities, so it is not local drift.
 See the addendum for the package list and the rejected `typescript-eslint` update.
+
+Post-merge verification: the `origin/main` merge (`2169eabf`) was checked with a fresh `npm ci`
+from the merged lockfile. All gates above still pass, the entry chunk is still
+266.36 kB / 84.73 kB gzip, and the bundle guard still passes. The merge brought in the remote
+esbuild CSS minifier, `allowScripts`, and `detect-libc` override; `dist/index.html` remains
+untracked. See addendum §3.14.
 
 ## V-01…V-20 results
 
@@ -52,7 +59,7 @@ See the addendum for the package list and the rejected `typescript-eslint` updat
 | V-07 | Entry ≤250 kB / ≤80 kB gzip; OCR only on Import/Debug                                       | Entry 266.36 kB / 84.73 kB gzip (script 260.12/81.86 KiB); OCR lazy on all 8 routes. React 19 + ReactDOM + router floor ~260/82, so the numeric target is unmet  | **MISSED (target)** |
 | V-08 | 1 cached load per navigation; 10k first render <100 ms                                      | 0 IDB reads per route switch after the first snapshot; 50 cards/page; cold first card 225 ms, then 70/85 ms; unit snapshot 263.9 ms vs 1,086.5 ms `fullScores()` | **PARTIAL**         |
 | V-09 | Second import of 10 scores: 10 rows total, `duplicates=10`                                  | 10 rows, 10 details; second report `imported=0 duplicates=10`; UI shows “duplicates skipped: 1” in the 1-score check                                             | PASS                |
-| V-10 | `BoxEditorPage` ≤250 lines; duplication <1%; editor/forms behave identically                | 103 lines; jscpd 0.11%; duplicated form block 45→5 lines; keyboard/pointer/save and both forms smoke-tested                                                      | PASS                |
+| V-10 | `BoxEditorPage` ≤250 lines; duplication <1%; editor/forms behave identically                | 103 lines; jscpd 0.20% final (0.11% at item time); duplicated form block 45→5 lines; keyboard/pointer/save and both forms smoke-tested                           | PASS                |
 | V-11 | “No circular dependency found,” exit 0                                                      | 2 cycles at baseline (including the P-03 cycle) → 0; exit 0                                                                                                      | PASS                |
 | V-12 | 0 leaked URLs per failed image; 0 workers after unload                                      | Corrupt PNG 1 created / 0 live; export 2 created / 0 live; real worker run pagehide → live=0, terminated=1                                                       | PASS                |
 | V-13 | `true` → Yes, `false` → No, absent → —                                                      | Detail and edit dialog show Yes/No/dash; unknown configs keep raw values                                                                                         | PASS                |
@@ -81,12 +88,12 @@ Tests       171 passed (171)
 All files   | 87.72 % Stmts | 82.18 % Branch | 90.82 % Funcs | 88.28 % Lines
 
 > vite build
-dist/assets/index-BC5TgXvD.css   7.34 kB │ gzip:  2.21 kB
-dist/assets/index-Bwr0EwbH.js  266.36 kB │ gzip: 84.73 kB
-✓ built in 1.60s
+dist/assets/index-6aaIkP9J.css   7.46 kB │ gzip:  2.29 kB
+dist/assets/index-B-LmXKzQ.js  266.36 kB │ gzip: 84.73 kB
+✓ built in 1.88s
 
 > node scripts/check-bundle.mjs
-Entry index-Bwr0EwbH.js: 260.12 kB (81.86 kB gzip)
+Entry index-B-LmXKzQ.js: 260.12 kB (81.86 kB gzip)
 Budget: 262.00 kB (83.00 kB gzip)
 Bundle budget passed; OCR assets stay out of the entry chunk.
 
@@ -95,7 +102,7 @@ Processed 49 files
 ✔ No circular dependency found!
 
 > jscpd src --threshold 1
-Files analyzed: 48; Total lines: 6406; Clones found: 1; Duplicated lines: 7 (0.11%)
+Files analyzed: 48; Total lines: 6406; Clones found: 2; Duplicated lines: 13 (0.20%)
 
 > npm audit --audit-level=high
 14 vulnerabilities (6 moderate, 8 high)

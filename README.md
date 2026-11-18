@@ -22,11 +22,12 @@ Documentation:
 ## Requirements
 
 - **Node.js 24** and **npm 11** (the versions CI uses).
-- A browser with IndexedDB, Web Workers, Canvas, and ES2022 module support. Current Chrome, Edge,
-  Firefox, and Safari work; Chromium is the best-tested.
-- Network access on the first OCR run so Tesseract.js can download its language models. Afterwards
-  the app works offline. If the Japanese/Chinese models cannot be fetched, text OCR degrades to
-  English only.
+- A browser with IndexedDB, Web Workers, Canvas, and ES2022 module support. Chromium is the
+  validated target; current Firefox and Safari are expected to work but were not part of the
+  maintenance validation.
+- Network access on the first OCR run so Tesseract.js can download its language models. Those
+  assets are cached, after which the app is designed to work offline. If the Japanese/Chinese
+  models cannot be fetched, text OCR degrades to English only.
 
 ## Setup
 
@@ -133,3 +134,13 @@ content.
 
 **Pending.** No licence file is present yet; do not assume a licence until the project owner adds
 one. This is the remaining open part of the documentation/release item.
+
+## Maintenance records
+
+- [Ritsu_Implementation_Log.md](Ritsu_Implementation_Log.md) — each P-item, reproduction, change,
+  validation, and status.
+- [Ritsu_Validation_Results.md](Ritsu_Validation_Results.md) — final gates, V-01…V-20 results, and
+  unmet targets.
+- [Ritsu_Report_Addendum.md](Ritsu_Report_Addendum.md) — corrections, new findings, and follow-ups.
+- `Ritsu_Software_Maintenance_Assessment.md` and `Ritsu_Assessment_Raw_Evidence.md` — the approved
+  work order and Phase 0 baseline.

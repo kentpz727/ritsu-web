@@ -42,6 +42,9 @@ adds the documentation, tests, and release hygiene needed to hand the project ov
 - **Misc display (P-13).** Explicit `false` values render as “No”, unrecorded booleans render as
   “—”, and unknown configs keep raw values.
 - **Graph scaling (P-20).** A flat series no longer fabricates a 101% top tick.
+- **Dependency refresh (P-06).** `eslint-plugin-react-refresh` was updated to 0.5.8 after the
+  initial audit. An attempted `typescript-eslint` 8.73.0 update was rejected because it raised
+  high advisories from 8 to 13; the tree stays on 8.72.2.
 
 ### Removed
 

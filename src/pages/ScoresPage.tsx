@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScoreListItem, useConfigMap, useFullScores } from '../components/scores.tsx';
 import { ScoreDetail } from '../components/detail.tsx';
@@ -16,6 +16,7 @@ export default function ScoresPage() {
   const [game, setGame] = useState<string>('All');
   const [selectedId, setSelectedId] = useState<number | undefined>();
   const [page, setPage] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // A filter change makes the old page index meaningless.
   useEffect(() => setPage(0), [q, sort, asc, game]);
@@ -46,6 +47,11 @@ export default function ScoresPage() {
   const [rangeFrom, rangeTo] = pageRange(currentPage, filtered.length);
   const selected = visible.find((f) => f.score.id === selectedId) ?? visible[0] ?? filtered[0];
 
+  // The list keeps its own scroll position; a new page or filter starts at the top.
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [currentPage, q, sort, asc, game]);
+
   // Android parity (getTrackCountForSong/Chart): plays of the song across all
   // difficulties, and plays of this exact chart — not a hardcoded 1.
   const trackCounts = useMemo(() => {
@@ -63,7 +69,7 @@ export default function ScoresPage() {
 
   return (
     <div className="split">
-      <section>
+      <section className="score-pane">
         <h1 className="page-title">Scores</h1>
         <div className="search-row">
           <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -84,11 +90,14 @@ export default function ScoresPage() {
             </button>
           ))}
         </div>
-        {visible.map((f) => (
-          <ScoreListItem key={f.score.id} item={f} selected={selected?.score.id === f.score.id} onSelect={() => setSelectedId(f.score.id)} config={configMap?.get(f.score.configId)} />
-        ))}
+        <div className="score-list-scroll" ref={listRef} role="region" aria-label="Score list" tabIndex={0}>
+          {visible.map((f) => (
+            <ScoreListItem key={f.score.id} item={f} selected={selected?.score.id === f.score.id} onSelect={() => setSelectedId(f.score.id)} config={configMap?.get(f.score.configId)} />
+          ))}
+          {filtered.length === 0 && <p className="muted">No scores yet — use the camera button to import.</p>}
+        </div>
         {filtered.length > SCORE_PAGE_SIZE && (
-          <div className="row" style={{ marginTop: 12, alignItems: 'center' }}>
+          <div className="row score-pager" style={{ alignItems: 'center' }}>
             <button className="btn" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 0}>
               Previous
             </button>
@@ -104,7 +113,6 @@ export default function ScoresPage() {
             </button>
           </div>
         )}
-        {filtered.length === 0 && <p className="muted">No scores yet — use the camera button to import.</p>}
       </section>
       <div className="divider" />
       <section>

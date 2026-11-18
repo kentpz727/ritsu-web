@@ -71,9 +71,27 @@ a { color: var(--accent); }
 
 .split { display: grid; grid-template-columns: 430px 1px 1fr; gap: 24px; align-items: start; }
 .split .divider { background: rgba(0,0,0,.46); width: 3px; min-height: 70vh; opacity: .5; }
+
+/* One scroll area for the whole card list; filters and pager stay put.
+   Desktop pins the pane below the topbar and keeps it clear of the bottom nav. */
+.score-pane {
+  position: sticky; top: 68px;
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 168px);
+  max-height: calc(100dvh - 168px);
+}
+.score-list-scroll {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  overscroll-behavior: contain; scrollbar-gutter: stable; padding-right: 4px;
+}
+.score-pager { flex: none; margin-top: 12px; }
+
 @media (max-width: 1000px) {
   .split { grid-template-columns: 1fr; }
   .split .divider { display: none; }
+  /* Stacked layout: cap the list so the detail actions follow right below it. */
+  .score-pane { position: static; max-height: none; }
+  .score-list-scroll { flex: none; max-height: 50vh; max-height: 50dvh; }
 }
 
 .page-title { font-size: 24px; font-weight: 400; margin: 8px 0 12px; }

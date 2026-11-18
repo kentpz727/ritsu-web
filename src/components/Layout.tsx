@@ -17,7 +17,7 @@ export function TopBar() {
         <span>Ritsu Web</span>
       </button>
       <div className="spacer" />
-      <button className="icon-btn" title="Account" aria-label="Account and data" onClick={() => nav('/data')}>◉</button>
+      <button className="icon-btn" title="Data and backups" aria-label="Data and backups" onClick={() => nav('/data')}>◉</button>
       <button className="icon-btn" title="Debug" aria-label="Debug tools" onClick={() => nav('/debug')}>🛠</button>
       <button className="icon-btn" title="Settings" aria-label="Manage game configs" onClick={() => nav('/configs')}>⚙</button>
     </header>

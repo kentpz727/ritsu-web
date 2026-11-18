@@ -54,7 +54,7 @@ export default function GameDetailsPage() {
       {chartSplit.hiddenCount > 0 && (
         <p className="muted">+{chartSplit.hiddenCount} more charts — top 10 by plays shown.</p>
       )}
-      <h3>Game Leaderboard</h3>
+      <h3>Local game rankings</h3>
       {chartBest.map((c, i) => (
         <div className="board-row" key={c.chart}>
           <strong>#{i + 1}</strong>

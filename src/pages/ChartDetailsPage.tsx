@@ -25,7 +25,7 @@ export default function ChartDetailsPage() {
     () => all.filter((f) => String(f.score.configId) === String(configId) && f.score.songTitle === songTitle && !rows.includes(f)),
     [all, configId, songTitle, rows],
   );
-  // Android ChartDetailsScreen parity: leaderboard sorts by metric desc (default Score).
+  // Android ChartDetailsScreen parity: rankings sort by metric desc (default Score).
   const [sortMode, setSortMode] = useState<'SCORE' | 'ACCURACY' | 'MAX_COMBO'>('SCORE');
   const sortedRows = useMemo(() => {
     const key = sortMode === 'SCORE' ? 'totalScore' : sortMode === 'ACCURACY' ? 'accuracy' : 'maxCombo';
@@ -49,7 +49,7 @@ export default function ChartDetailsPage() {
         label="Score over time"
         fixedMetric="score"
       />
-      <h3>Chart Leaderboard</h3>
+      <h3>Local chart rankings</h3>
       <div className="row" style={{ marginBottom: 8 }}>
         {(['SCORE', 'ACCURACY', 'MAX_COMBO'] as const).map((m) => (
           <button

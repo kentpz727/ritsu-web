@@ -332,7 +332,7 @@ export default function DataPage() {
           ) : (
             <p className="muted">No activity yet — import scores to fill this graph.</p>
           )}
-          <h2 style={{ marginTop: 24 }}>Game Leaderboard</h2>
+          <h2 style={{ marginTop: 24 }}>Local game performance</h2>
           <MetricGraph series={gameSeries} label="Performance over time" />
           <div className="card">
             <h2>Export / Import</h2>
